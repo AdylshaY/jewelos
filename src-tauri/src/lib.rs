@@ -1,9 +1,18 @@
 mod db;
+mod features;
 
 use std::sync::Mutex;
 
 use db::DbState;
 use tauri::Manager;
+use features::daily_vault::{
+    get_vault_status,
+    get_last_exchange_rates,
+    open_daily_vault,
+    add_asset_transaction,
+    close_daily_vault,
+    get_daily_summary,
+};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -27,7 +36,15 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            get_vault_status,
+            get_last_exchange_rates,
+            open_daily_vault,
+            add_asset_transaction,
+            close_daily_vault,
+            get_daily_summary
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

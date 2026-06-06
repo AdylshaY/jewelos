@@ -20,10 +20,11 @@ Foundation and Inventory Module
 - Setup React
 - Setup Tailwind CSS v4
 - Setup SQLite (rusqlite + rusqlite_migration)
+- Build Daily Vault backend & UI
 
 ## Active Goals
 
-1. Build Daily Vault UI
+1. Build Inventory Module (UI & Backend)
 
 ## Current Focus
 
