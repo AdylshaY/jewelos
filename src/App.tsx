@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import VaultDashboard from './features/daily_vault/components/VaultDashboard';
+import ProductList from './features/inventory/components/ProductList';
+import { useDailyVault } from './features/daily_vault/hooks/useDailyVault';
 import { 
   Briefcase, 
   Layers, 
@@ -10,6 +12,7 @@ import {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'vault' | 'inventory' | 'settings'>('vault');
+  const { selectedDate } = useDailyVault();
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans antialiased overflow-hidden">
@@ -42,21 +45,21 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => {}}
-              disabled={true}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl text-zinc-600 cursor-not-allowed group relative"
+              onClick={() => setActiveTab('inventory')}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+                activeTab === 'inventory'
+                  ? 'bg-zinc-800/60 text-zinc-100 border border-zinc-700/50 shadow-inner shadow-black/10'
+                  : 'text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
+              }`}
             >
-              <span className="flex items-center gap-3">
-                <Layers className="w-4 h-4 text-zinc-750" />
-                Ürün Yönetimi
-              </span>
-              <span className="text-[9px] bg-zinc-850 text-zinc-500 px-1.5 py-0.5 rounded border border-zinc-800/60 font-semibold tracking-wider uppercase">Yakında</span>
+              <Layers className={`w-4 h-4 ${activeTab === 'inventory' ? 'text-amber-500' : 'text-zinc-500'}`} />
+              Ürün Yönetimi
             </button>
 
             <button
               onClick={() => {}}
               disabled={true}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl text-zinc-600 cursor-not-allowed"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl text-zinc-650 cursor-not-allowed"
             >
               <span className="flex items-center gap-3">
                 <Settings className="w-4 h-4 text-zinc-750" />
@@ -95,6 +98,9 @@ export default function App() {
 
         <section className="flex-1 p-8 max-w-7xl w-full mx-auto">
           {activeTab === 'vault' && <VaultDashboard />}
+          {activeTab === 'inventory' && (
+            <ProductList activeDate={selectedDate} />
+          )}
         </section>
       </main>
     </div>

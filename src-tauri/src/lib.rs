@@ -13,6 +13,15 @@ use features::daily_vault::{
     close_daily_vault,
     get_daily_summary,
 };
+use features::inventory::{
+    get_products,
+    get_categories,
+    add_category,
+    purchase_product,
+    sell_product,
+    return_product,
+    get_inventory_transactions,
+};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -43,7 +52,14 @@ pub fn run() {
             open_daily_vault,
             add_asset_transaction,
             close_daily_vault,
-            get_daily_summary
+            get_daily_summary,
+            get_products,
+            get_categories,
+            add_category,
+            purchase_product,
+            sell_product,
+            return_product,
+            get_inventory_transactions
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
