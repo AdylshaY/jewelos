@@ -34,10 +34,10 @@ export default function App() {
           <nav className="p-4 space-y-1">
             <button
               onClick={() => setActiveTab('vault')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all focus:outline-none border ${
                 activeTab === 'vault'
-                  ? 'bg-zinc-800/60 text-zinc-100 border border-zinc-700/50 shadow-inner shadow-black/10'
-                  : 'text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
+                  ? 'bg-zinc-800/60 text-zinc-100 border-zinc-700/50 shadow-inner shadow-black/10'
+                  : 'border-transparent text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
               }`}
             >
               <Briefcase className={`w-4 h-4 ${activeTab === 'vault' ? 'text-amber-500' : 'text-zinc-500'}`} />
@@ -46,10 +46,10 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all focus:outline-none border ${
                 activeTab === 'inventory'
-                  ? 'bg-zinc-800/60 text-zinc-100 border border-zinc-700/50 shadow-inner shadow-black/10'
-                  : 'text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
+                  ? 'bg-zinc-800/60 text-zinc-100 border-zinc-700/50 shadow-inner shadow-black/10'
+                  : 'border-transparent text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
               }`}
             >
               <Layers className={`w-4 h-4 ${activeTab === 'inventory' ? 'text-amber-500' : 'text-zinc-500'}`} />
