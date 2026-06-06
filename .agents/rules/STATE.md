@@ -19,11 +19,11 @@ Foundation and Inventory Module
 - Setup Tauri 2
 - Setup React
 - Setup Tailwind CSS v4
+- Setup SQLite (rusqlite + rusqlite_migration)
 
 ## Active Goals
 
-1. Setup SQLite
-2. Build Daily Vault UI
+1. Build Daily Vault UI
 
 ## Current Focus
 
