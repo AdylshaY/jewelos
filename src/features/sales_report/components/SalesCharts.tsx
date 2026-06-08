@@ -17,6 +17,7 @@ interface SalesChartsProps {
   monthly: MonthlySalesSummary[];
   byCategory: CategorySalesSummary[];
   translateCategory: (code: string) => string;
+  theme: 'light' | 'dark';
 }
 
 const CATEGORY_COLORS = [
@@ -36,7 +37,15 @@ const formatMonth = (month: string) => {
   return `${months[parseInt(m) - 1]} ${year.slice(2)}`;
 };
 
-export default function SalesCharts({ monthly, byCategory, translateCategory }: SalesChartsProps) {
+export default function SalesCharts({ monthly, byCategory, translateCategory, theme }: SalesChartsProps) {
+  const isDark = theme === 'dark';
+  const gridColor = isDark ? '#27272a' : '#e5e7eb';
+  const tickColor = isDark ? '#71717a' : '#4b5563';
+  const tooltipBg = isDark ? '#18181b' : '#ffffff';
+  const tooltipBorder = isDark ? '#3f3f46' : '#e5e7eb';
+  const tooltipLabelColor = isDark ? '#a1a1aa' : '#4b5563';
+  const tooltipItemColor = isDark ? '#f4f4f5' : '#111827';
+  const cursorFill = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
   const categoryData = byCategory.map((c) => ({
     name: translateCategory(c.category_code),
     value: c.count,
@@ -57,23 +66,23 @@ export default function SalesCharts({ monthly, byCategory, translateCategory }: 
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Aylık Satış Grafiği</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={monthlyData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis dataKey="name" tick={{ fill: '#71717a', fontSize: 11 }} />
-              <YAxis yAxisId="left" tick={{ fill: '#71717a', fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="name" tick={{ fill: tickColor, fontSize: 11 }} />
+              <YAxis yAxisId="left" tick={{ fill: tickColor, fontSize: 11 }} />
               <YAxis yAxisId="right" orientation="right" tick={{ fill: '#f59e0b', fontSize: 11 }} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #3f3f46',
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
                   borderRadius: '12px',
                   fontSize: '12px',
                 }}
-                labelStyle={{ color: '#a1a1aa' }}
-                itemStyle={{ color: '#f4f4f5' }}
-                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                labelStyle={{ color: tooltipLabelColor }}
+                itemStyle={{ color: tooltipItemColor }}
+                cursor={{ fill: cursorFill }}
               />
               <Legend
-                wrapperStyle={{ fontSize: '11px', color: '#a1a1aa', paddingTop: '10px' }}
+                wrapperStyle={{ fontSize: '11px', color: tooltipLabelColor, paddingTop: '10px' }}
                 iconType="circle"
                 iconSize={8}
               />
@@ -107,17 +116,17 @@ export default function SalesCharts({ monthly, byCategory, translateCategory }: 
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #3f3f46',
+                  backgroundColor: tooltipBg,
+                  border: `1px solid ${tooltipBorder}`,
                   borderRadius: '12px',
                   fontSize: '12px',
                 }}
-                labelStyle={{ color: '#a1a1aa' }}
-                itemStyle={{ color: '#f4f4f5' }}
+                labelStyle={{ color: tooltipLabelColor }}
+                itemStyle={{ color: tooltipItemColor }}
                 formatter={(value: any, name: any) => [`${value} adet`, name]}
               />
               <Legend
-                wrapperStyle={{ fontSize: '11px', color: '#a1a1aa' }}
+                wrapperStyle={{ fontSize: '11px', color: tooltipLabelColor }}
                 iconType="circle"
                 iconSize={8}
               />

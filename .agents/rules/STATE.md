@@ -24,6 +24,7 @@ Foundation and Inventory Module
 - Build Inventory / Stock Management Module backend & UI
 - Build Sales Reports Module backend & UI
 - Build Database Backup & Restore feature under System Settings (Yedekleme ve Geri Yükleme)
+- Build Light Mode (Açık Tema) support with localStorage persistence and Recharts adaptation
 
 ## Active Goals
 

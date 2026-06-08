@@ -10,7 +10,11 @@ import {
   Search,
 } from 'lucide-react';
 
-export default function SalesReportPage() {
+interface SalesReportPageProps {
+  theme: 'light' | 'dark';
+}
+
+export default function SalesReportPage({ theme }: SalesReportPageProps) {
   const { report, loading, error, fetchReport, translateCategory, getPurityLabel } = useSalesReport();
 
   const [dateFrom, setDateFrom] = useState('');
@@ -111,6 +115,7 @@ export default function SalesReportPage() {
           monthly={report.monthly}
           byCategory={report.by_category}
           translateCategory={translateCategory}
+          theme={theme}
         />
       )}
 

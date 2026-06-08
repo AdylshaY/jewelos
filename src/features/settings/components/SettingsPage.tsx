@@ -10,9 +10,16 @@ import {
   CheckCircle2,
   XCircle,
   X,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
-export default function SettingsPage() {
+interface SettingsPageProps {
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+}
+
+export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
   const {
     backupLoading,
     restoreLoading,
@@ -136,6 +143,49 @@ export default function SettingsPage() {
                 Yedek Dosyası Yükle
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Appearance Settings Card */}
+      <div className="p-6 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl backdrop-blur-md space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b border-zinc-850/60">
+          <Sun className="w-5 h-5 text-zinc-400" />
+          <h3 className="text-md font-bold text-zinc-150">Görünüm Ayarları</h3>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="max-w-xl space-y-1">
+            <h4 className="text-sm font-semibold text-zinc-200">
+              Renk Teması Seçimi
+            </h4>
+            <p className="text-xs text-zinc-450 leading-relaxed">
+              Uygulamanın arayüz renk temasını seçin. Koyu tema (orijinal) veya açık tema seçeneklerinden birini tercih edebilirsiniz.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-850 shrink-0">
+            <button
+              onClick={() => setTheme('light')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                theme === 'light'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/10'
+                  : 'text-zinc-450 hover:text-zinc-250 hover:bg-zinc-900/40'
+              }`}
+            >
+              <Sun className="w-4 h-4" />
+              Açık Tema
+            </button>
+            <button
+              onClick={() => setTheme('dark')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                theme === 'dark'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/10'
+                  : 'text-zinc-450 hover:text-zinc-250 hover:bg-zinc-900/40'
+              }`}
+            >
+              <Moon className="w-4 h-4" />
+              Koyu Tema
+            </button>
           </div>
         </div>
       </div>

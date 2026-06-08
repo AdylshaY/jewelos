@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VaultDashboard from './features/daily_vault/components/VaultDashboard';
 import ProductList from './features/inventory/components/ProductList';
 import SalesReportPage from './features/sales_report/components/SalesReportPage';
@@ -17,6 +17,22 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'vault' | 'inventory' | 'sales' | 'settings'>('vault');
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
 
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return 'dark';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans antialiased overflow-hidden">
       {/* Sidebar Layout */}
@@ -25,7 +41,7 @@ export default function App() {
           {/* Logo Brand */}
           <div className="p-6 flex items-center gap-2.5 border-b border-zinc-850/60">
             <div className="p-2 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-xl shadow-lg shadow-amber-500/10">
-              <Gem className="w-5 h-5 text-zinc-950 font-bold" />
+              <Gem className="w-5 h-5 text-stone-950 font-bold" />
             </div>
             <div>
               <h1 className="text-md font-black tracking-wider text-zinc-100 uppercase">JewelOS</h1>
@@ -112,8 +128,8 @@ export default function App() {
           {activeTab === 'inventory' && (
             <ProductList activeDate={selectedDate} />
           )}
-          {activeTab === 'sales' && <SalesReportPage />}
-          {activeTab === 'settings' && <SettingsPage />}
+          {activeTab === 'sales' && <SalesReportPage theme={theme} />}
+          {activeTab === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} />}
         </section>
       </main>
     </div>
