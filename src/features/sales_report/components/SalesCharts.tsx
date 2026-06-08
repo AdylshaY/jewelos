@@ -69,6 +69,13 @@ export default function SalesCharts({ monthly, byCategory, translateCategory }: 
                   fontSize: '12px',
                 }}
                 labelStyle={{ color: '#a1a1aa' }}
+                itemStyle={{ color: '#f4f4f5' }}
+                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: '11px', color: '#a1a1aa', paddingTop: '10px' }}
+                iconType="circle"
+                iconSize={8}
               />
               <Bar yAxisId="left" dataKey="adet" name="Satış Adedi" fill="#3b82f6" radius={[4, 4, 0, 0]} />
               <Bar yAxisId="right" dataKey="hasAltin" name="Has Altın (gr)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
@@ -105,7 +112,9 @@ export default function SalesCharts({ monthly, byCategory, translateCategory }: 
                   borderRadius: '12px',
                   fontSize: '12px',
                 }}
-              formatter={(value: any, name: any) => [`${value} adet`, name]}
+                labelStyle={{ color: '#a1a1aa' }}
+                itemStyle={{ color: '#f4f4f5' }}
+                formatter={(value: any, name: any) => [`${value} adet`, name]}
               />
               <Legend
                 wrapperStyle={{ fontSize: '11px', color: '#a1a1aa' }}
