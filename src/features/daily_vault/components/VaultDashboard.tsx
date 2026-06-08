@@ -17,7 +17,12 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-export default function VaultDashboard() {
+interface VaultDashboardProps {
+  selectedDate?: string;
+  setSelectedDate?: (date: string) => void;
+}
+
+export default function VaultDashboard({ selectedDate: propSelectedDate, setSelectedDate: propSetSelectedDate }: VaultDashboardProps) {
   const {
     selectedDate,
     setSelectedDate,
@@ -35,7 +40,7 @@ export default function VaultDashboard() {
     handlePrevDay,
     handleNextDay,
     handleGoToToday,
-  } = useDailyVault();
+  } = useDailyVault(propSelectedDate, propSetSelectedDate);
 
   const [isOpenModalOpen, setIsOpenModalOpen] = useState(false);
   const [isAddTxModalOpen, setIsAddTxModalOpen] = useState(false);

@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import VaultDashboard from './features/daily_vault/components/VaultDashboard';
 import ProductList from './features/inventory/components/ProductList';
-import { useDailyVault } from './features/daily_vault/hooks/useDailyVault';
+import SalesReportPage from './features/sales_report/components/SalesReportPage';
+import { getLocalDateString } from './features/daily_vault/hooks/useDailyVault';
 import { 
   Briefcase, 
   Layers, 
+  BarChart3,
   Settings, 
   HelpCircle,
   Gem
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'vault' | 'inventory' | 'settings'>('vault');
-  const { selectedDate } = useDailyVault();
+  const [activeTab, setActiveTab] = useState<'vault' | 'inventory' | 'sales' | 'settings'>('vault');
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans antialiased overflow-hidden">
@@ -57,6 +59,18 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => setActiveTab('sales')}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all focus:outline-none border ${
+                activeTab === 'sales'
+                  ? 'bg-zinc-800/60 text-zinc-100 border-zinc-700/50 shadow-inner shadow-black/10'
+                  : 'border-transparent text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
+              }`}
+            >
+              <BarChart3 className={`w-4 h-4 ${activeTab === 'sales' ? 'text-amber-500' : 'text-zinc-500'}`} />
+              Satış Raporları
+            </button>
+
+            <button
               onClick={() => {}}
               disabled={true}
               className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl text-zinc-650 cursor-not-allowed"
@@ -97,10 +111,13 @@ export default function App() {
         </header>
 
         <section className="flex-1 p-8 max-w-7xl w-full mx-auto">
-          {activeTab === 'vault' && <VaultDashboard />}
+          {activeTab === 'vault' && (
+            <VaultDashboard selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
+          )}
           {activeTab === 'inventory' && (
             <ProductList activeDate={selectedDate} />
           )}
+          {activeTab === 'sales' && <SalesReportPage />}
         </section>
       </main>
     </div>

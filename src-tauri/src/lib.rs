@@ -15,13 +15,21 @@ use features::daily_vault::{
 };
 use features::inventory::{
     get_products,
+    add_product,
+    update_product,
+    get_stock_items,
+    purchase_stock,
+    sell_stock_item,
+    return_stock_item,
     get_categories,
     add_category,
     update_category,
-    purchase_product,
-    sell_product,
-    return_product,
     get_inventory_transactions,
+    update_stock_item,
+    delete_stock_item,
+};
+use features::sales_report::{
+    get_sales_report,
 };
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -55,13 +63,19 @@ pub fn run() {
             close_daily_vault,
             get_daily_summary,
             get_products,
+            add_product,
+            update_product,
+            get_stock_items,
+            purchase_stock,
+            sell_stock_item,
+            return_stock_item,
             get_categories,
             add_category,
             update_category,
-            purchase_product,
-            sell_product,
-            return_product,
-            get_inventory_transactions
+            get_inventory_transactions,
+            get_sales_report,
+            update_stock_item,
+            delete_stock_item
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

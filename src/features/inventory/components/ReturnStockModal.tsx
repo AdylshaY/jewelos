@@ -1,27 +1,41 @@
-import React, { useState } from 'react';
-import { StockItem, SaleParams } from '../types';
+import React, { useState, useEffect } from 'react';
+import { StockItem } from '../types';
 
-interface SellProductModalProps {
+interface ReturnStockModalProps {
   isOpen: boolean;
   onClose: () => void;
   stockItem: StockItem | null;
   activeDate: string;
-  onSell: (params: SaleParams) => Promise<void>;
+  onReturn: (
+    stockItemId: number,
+    vaultDate: string,
+    refundAmount: number,
+    refundAsset: string,
+    notes: string | null,
+  ) => Promise<void>;
 }
 
-export default function SellProductModal({
+export default function ReturnStockModal({
   isOpen,
   onClose,
   stockItem,
   activeDate,
-  onSell,
-}: SellProductModalProps) {
-  const [price, setPrice] = useState('');
-  const [paymentAsset, setPaymentAsset] = useState<'TRY' | 'USD' | 'EUR' | 'FINE_GOLD'>('TRY');
-  const [customerName, setCustomerName] = useState('');
-  const [notes, setNotes] = useState('');
+  onReturn,
+}: ReturnStockModalProps) {
+  const [refundAmount, setRefundAmount] = useState('0');
+  const [refundAsset, setRefundAsset] = useState<'TRY' | 'USD' | 'EUR' | 'FINE_GOLD'>('TRY');
+  const [notes, setNotes] = useState('Müşteri İade Talebi');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setRefundAmount('0');
+      setRefundAsset('TRY');
+      setNotes('Müşteri İade Talebi');
+      setError(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen || !stockItem) return null;
 
@@ -29,31 +43,24 @@ export default function SellProductModal({
     e.preventDefault();
     setError(null);
 
-    const prc = parseFloat(price);
-    if (isNaN(prc) || prc <= 0) {
-      setError('Lütfen geçerli bir satış fiyatı girin.');
+    const amount = parseFloat(refundAmount);
+    if (isNaN(amount) || amount < 0) {
+      setError('Lütfen geçerli bir iade tutarı girin.');
       return;
     }
 
     setLoading(true);
     try {
-      await onSell({
-        stock_item_id: stockItem.id,
-        vault_date: activeDate,
-        price: prc,
-        payment_asset: paymentAsset,
-        customer_name: customerName.trim() || null,
-        notes: notes.trim() || null,
-      });
-
-      // Reset state on success
-      setPrice('');
-      setCustomerName('');
-      setNotes('');
-      setPaymentAsset('TRY');
+      await onReturn(
+        stockItem.id,
+        activeDate,
+        amount,
+        refundAsset,
+        notes.trim() || null,
+      );
       onClose();
     } catch (err: any) {
-      setError(err.toString() || 'Satış kaydedilirken hata oluştu.');
+      setError(err.toString() || 'İade kaydedilirken hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -65,8 +72,8 @@ export default function SellProductModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-zinc-850 flex items-center justify-between bg-zinc-900/50">
           <h3 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-            Ürün Satışı Yap
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+            Ürün İade Al
           </h3>
           <button
             onClick={onClose}
@@ -103,25 +110,24 @@ export default function SellProductModal({
             </div>
           </div>
 
-          {/* Price & Payment */}
+          {/* Refund Amount & Asset */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-zinc-450 mb-1">Satış Fiyatı</label>
+              <label className="block text-xs text-zinc-450 mb-1">Geri Ödeme Tutarı</label>
               <input
                 type="number"
                 step="any"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="0.00"
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs text-zinc-450 mb-1">Ödeme Türü</label>
+              <label className="block text-xs text-zinc-450 mb-1">Ödeme Yapılacak Kasa</label>
               <select
-                value={paymentAsset}
-                onChange={(e: any) => setPaymentAsset(e.target.value)}
+                value={refundAsset}
+                onChange={(e: any) => setRefundAsset(e.target.value)}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50"
                 required
               >
@@ -133,26 +139,14 @@ export default function SellProductModal({
             </div>
           </div>
 
-          {/* Customer */}
-          <div>
-            <label className="block text-xs text-zinc-450 mb-1">Müşteri Adı (Opsiyonel)</label>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Örn: Ahmet Yılmaz"
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50"
-            />
-          </div>
-
           {/* Notes */}
           <div>
-            <label className="block text-xs text-zinc-450 mb-1">Notlar (Opsiyonel)</label>
+            <label className="block text-xs text-zinc-450 mb-1">İade Notu</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Satışa özel notlar..."
+              placeholder="İade gerekçesi..."
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50"
             />
           </div>
@@ -172,7 +166,7 @@ export default function SellProductModal({
               disabled={loading}
               className="px-5 py-2 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white transition-colors text-sm font-medium rounded-xl disabled:opacity-50"
             >
-              {loading ? 'Kaydediliyor...' : 'Satışı Tamamla'}
+              {loading ? 'Kaydediliyor...' : 'İade Al'}
             </button>
           </div>
         </form>

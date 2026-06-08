@@ -498,7 +498,7 @@ pub async fn get_daily_summary(
                 .query_row(
                     "SELECT COALESCE(SUM(
                         CASE 
-                            WHEN transaction_type IN ('purchase', 'return') THEN fine_gold_gram 
+                            WHEN transaction_type IN ('purchase', 'return', 'adjustment') THEN fine_gold_gram 
                             WHEN transaction_type IN ('sale', 'transfer') THEN -fine_gold_gram
                             ELSE 0.0 
                         END
@@ -532,8 +532,20 @@ pub async fn get_daily_summary(
             let (inv_in, inv_out): (f64, f64) = conn
                 .query_row(
                     "SELECT 
-                        COALESCE(SUM(CASE WHEN transaction_type IN ('purchase', 'return') THEN fine_gold_gram ELSE 0.0 END), 0.0),
-                        COALESCE(SUM(CASE WHEN transaction_type IN ('sale', 'transfer') THEN fine_gold_gram ELSE 0.0 END), 0.0)
+                        COALESCE(SUM(
+                            CASE 
+                                WHEN transaction_type IN ('purchase', 'return') THEN fine_gold_gram 
+                                WHEN transaction_type = 'adjustment' AND fine_gold_gram > 0.0 THEN fine_gold_gram
+                                ELSE 0.0 
+                            END
+                        ), 0.0),
+                        COALESCE(SUM(
+                            CASE 
+                                WHEN transaction_type IN ('sale', 'transfer') THEN fine_gold_gram 
+                                WHEN transaction_type = 'adjustment' AND fine_gold_gram < 0.0 THEN -fine_gold_gram
+                                ELSE 0.0 
+                            END
+                        ), 0.0)
                      FROM inventory_transactions
                      WHERE vault_date = ?",
                     params![date],

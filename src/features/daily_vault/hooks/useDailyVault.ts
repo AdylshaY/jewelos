@@ -15,9 +15,14 @@ export const getLocalDateString = (date = new Date()) => {
   return localDate.toISOString().split('T')[0];
 };
 
-export function useDailyVault() {
-  const [selectedDate, setSelectedDate] =
-    useState<string>(getLocalDateString());
+export function useDailyVault(
+  controlledDate?: string,
+  onControlledDateChange?: (date: string) => void
+) {
+  const [localDate, setLocalDate] = useState<string>(getLocalDateString());
+  const selectedDate = controlledDate !== undefined ? controlledDate : localDate;
+  const setSelectedDate = onControlledDateChange !== undefined ? onControlledDateChange : setLocalDate;
+
   const [vaultStatus, setVaultStatus] = useState<VaultStatus | null>(null);
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [lastRates, setLastRates] = useState<ExchangeRatesSummary | null>(null);

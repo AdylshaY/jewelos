@@ -1,37 +1,49 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  Product, 
-  ProductCategory, 
-  InventoryTransaction, 
-  NewProduct, 
-  SaleParams, 
-  ProductFilters 
+import {
+  Product,
+  ProductCategory,
+  StockItem,
+  NewProduct,
+  NewStockEntry,
+  SaleParams,
+  StockFilters,
 } from '../types';
 
 export function useInventory() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
-  
-  const [filters, setFilters] = useState<ProductFilters>({
+
+  const [filters, setFilters] = useState<StockFilters>({
     status: 'in_stock',
     category_id: null,
+    product_id: null,
     search: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch products with filters
+  // Fetch product catalog
   const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const list: Product[] = await invoke('get_products', { filters });
+      const list: Product[] = await invoke('get_products');
       setProducts(list);
     } catch (err: any) {
       console.error('Failed to fetch products:', err);
+    }
+  }, []);
+
+  // Fetch stock items with filters
+  const fetchStockItems = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const list: StockItem[] = await invoke('get_stock_items', { filters });
+      setStockItems(list);
+    } catch (err: any) {
+      console.error('Failed to fetch stock items:', err);
       setError(err.toString());
     } finally {
       setLoading(false);
@@ -48,22 +60,32 @@ export function useInventory() {
     }
   }, []);
 
-  // Fetch transactions list
-  const fetchTransactions = useCallback(async (productId: number | null = null) => {
-    setLoading(true);
+  // Add new product to catalog
+  const addProduct = async (product: NewProduct): Promise<number> => {
     setError(null);
     try {
-      const list: InventoryTransaction[] = await invoke('get_inventory_transactions', { 
-        productId: productId || undefined 
-      });
-      setTransactions(list);
+      const id: number = await invoke('add_product', { product });
+      await fetchProducts();
+      return id;
     } catch (err: any) {
-      console.error('Failed to fetch transactions:', err);
+      console.error('Failed to add product:', err);
       setError(err.toString());
-    } finally {
-      setLoading(false);
+      throw err;
     }
-  }, []);
+  };
+
+  // Update product catalog entry
+  const updateProduct = async (id: number, name: string, description: string | null) => {
+    setError(null);
+    try {
+      await invoke('update_product', { id, name, description });
+      await fetchProducts();
+    } catch (err: any) {
+      console.error('Failed to update product:', err);
+      setError(err.toString());
+      throw err;
+    }
+  };
 
   // Add new category
   const addCategory = async (code: string, sortOrder: number) => {
@@ -91,27 +113,28 @@ export function useInventory() {
     }
   };
 
-  // Purchase / Add new product
-  const purchaseProduct = async (
+  // Purchase stock (batch capable)
+  const purchaseStock = async (
     vaultDate: string,
-    product: NewProduct,
+    entry: NewStockEntry,
     payFromVault: boolean,
     vaultPrice: number | null,
-    vaultAsset: string | null
+    vaultAsset: string | null,
   ) => {
     setLoading(true);
     setError(null);
     try {
-      await invoke('purchase_product', {
+      await invoke('purchase_stock', {
         vaultDate,
-        product,
+        entry,
         payFromVault,
         vaultPrice,
         vaultAsset,
       });
+      await fetchStockItems();
       await fetchProducts();
     } catch (err: any) {
-      console.error('Failed to purchase product:', err);
+      console.error('Failed to purchase stock:', err);
       setError(err.toString());
       throw err;
     } finally {
@@ -119,15 +142,16 @@ export function useInventory() {
     }
   };
 
-  // Sell product
-  const sellProduct = async (params: SaleParams) => {
+  // Sell stock item
+  const sellStockItem = async (params: SaleParams) => {
     setLoading(true);
     setError(null);
     try {
-      await invoke('sell_product', { params });
+      await invoke('sell_stock_item', { params });
+      await fetchStockItems();
       await fetchProducts();
     } catch (err: any) {
-      console.error('Failed to sell product:', err);
+      console.error('Failed to sell stock item:', err);
       setError(err.toString());
       throw err;
     } finally {
@@ -135,27 +159,77 @@ export function useInventory() {
     }
   };
 
-  // Return product
-  const returnProduct = async (
-    productId: number,
+  // Return stock item
+  const returnStockItem = async (
+    stockItemId: number,
     vaultDate: string,
     refundAmount: number,
     refundAsset: string,
-    notes: string | null
+    notes: string | null,
   ) => {
     setLoading(true);
     setError(null);
     try {
-      await invoke('return_product', {
-        productId,
+      await invoke('return_stock_item', {
+        stockItemId,
         vaultDate,
         refundAmount,
         refundAsset,
         notes,
       });
+      await fetchStockItems();
       await fetchProducts();
     } catch (err: any) {
-      console.error('Failed to return product:', err);
+      console.error('Failed to return stock item:', err);
+      setError(err.toString());
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update stock item
+  const updateStockItem = async (
+    stockItemId: number,
+    weightGram: number,
+    barcode: string,
+    notes: string | null,
+    vaultDate: string,
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await invoke('update_stock_item', {
+        stockItemId,
+        weightGram,
+        barcode,
+        notes,
+        vaultDate,
+      });
+      await fetchStockItems();
+      await fetchProducts();
+    } catch (err: any) {
+      console.error('Failed to update stock item:', err);
+      setError(err.toString());
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete stock item
+  const deleteStockItem = async (stockItemId: number, vaultDate: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await invoke('delete_stock_item', {
+        stockItemId,
+        vaultDate,
+      });
+      await fetchStockItems();
+      await fetchProducts();
+    } catch (err: any) {
+      console.error('Failed to delete stock item:', err);
       setError(err.toString());
       throw err;
     } finally {
@@ -166,12 +240,13 @@ export function useInventory() {
   // Fetch initial data
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
-
-  // Refetch products when filters change
-  useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+  }, [fetchCategories, fetchProducts]);
+
+  // Refetch stock items when filters change
+  useEffect(() => {
+    fetchStockItems();
+  }, [fetchStockItems]);
 
   // Translate Category Codes to Turkish labels
   const translateCategory = (code: string) => {
@@ -182,7 +257,6 @@ export function useInventory() {
       case 'earring': return 'Küpe';
       case 'other': return 'Diğer';
       default:
-        // Capitalize first letter of custom category
         return code.charAt(0).toUpperCase() + code.slice(1);
     }
   };
@@ -200,19 +274,23 @@ export function useInventory() {
 
   return {
     products,
+    stockItems,
     categories,
-    transactions,
     filters,
     setFilters,
     loading,
     error,
     refreshProducts: fetchProducts,
-    fetchTransactions,
+    refreshStockItems: fetchStockItems,
+    addProduct,
+    updateProduct,
     addCategory,
     updateCategory,
-    purchaseProduct,
-    sellProduct,
-    returnProduct,
+    purchaseStock,
+    sellStockItem,
+    returnStockItem,
+    updateStockItem,
+    deleteStockItem,
     translateCategory,
     getPurityLabel,
   };
