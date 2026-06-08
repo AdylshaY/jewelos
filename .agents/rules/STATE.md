@@ -21,14 +21,17 @@ Foundation and Inventory Module
 - Setup Tailwind CSS v4
 - Setup SQLite (rusqlite + rusqlite_migration)
 - Build Daily Vault backend & UI
+- Build Inventory / Stock Management Module backend & UI
+- Build Sales Reports Module backend & UI
 
 ## Active Goals
 
-1. Build Inventory Module (UI & Backend)
+1. Polish and optimize Phase 1 modules (Daily Vault, Inventory, Sales Reports)
+2. Gather user feedback for UX/UI refinements
 
 ## Current Focus
 
-Inventory Module
+Refinement and UI/UX optimization
 
 ## Forbidden Areas
 
@@ -43,4 +46,11 @@ Do not create code for them.
 
 ## Database Snapshot
 
-No production schema exists yet.
+Active schema tables (managed via SQLite migrations):
+- `daily_vault` (tracks vault status per day)
+- `exchange_rates` (tracks asset currency exchange rates per vault date)
+- `asset_entries` (tracks vault cash/gold balances)
+- `product_categories` (product category lookup)
+- `products` (product definition templates)
+- `stock_items` (physical inventory items with barcodes and weights)
+- `inventory_transactions` (purchase, sale, return, adjustment, transfer transactions)
