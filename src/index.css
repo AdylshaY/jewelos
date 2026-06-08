@@ -1,5 +1,23 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom styling for dropdowns (select elements) to match inputs exactly */
+select {
+  appearance: none;
+  padding-right: 2.5rem !important;
+}
+
+select.py-2 {
+  height: 38px;
+}
+
+select.py-2\.5 {
+  height: 42px;
+}
+
+select.py-1\.5 {
+  height: 30px;
 }
