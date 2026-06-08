@@ -6,6 +6,7 @@ import CategoryModal from './CategoryModal';
 import ProductCatalogModal from './ProductCatalogModal';
 import EditStockModal from './EditStockModal';
 import ReturnStockModal from './ReturnStockModal';
+import StockTable from './StockTable';
 import { StockItem } from '../types';
 import {
   Plus,
@@ -14,10 +15,8 @@ import {
   Tag,
   Coins,
   Award,
-  ArrowLeftRight,
   BookOpen,
-  Pencil,
-  Trash2,
+  ChevronDown,
 } from 'lucide-react';
 
 interface ProductListProps {
@@ -46,6 +45,7 @@ export default function ProductList({ activeDate }: ProductListProps) {
     getPurityLabel,
   } = useInventory();
 
+  const [viewMode, setViewMode] = useState<'grouped' | 'list'>('grouped');
   const [isAddStockOpen, setIsAddStockOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
@@ -145,154 +145,96 @@ export default function ProductList({ activeDate }: ProductListProps) {
       </div>
 
       {/* Filters */}
-      <div className="p-4 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl backdrop-blur-md flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="grid grid-cols-4 gap-1 p-0.5 bg-zinc-950 border border-zinc-850 rounded-xl w-full sm:w-auto">
-          {[
-            { id: 'in_stock', label: 'Stoktakiler' },
-            { id: 'sold', label: 'Satılanlar' },
-            { id: 'returned', label: 'İadeler' },
-            { id: 'all', label: 'Tümü' },
-          ].map((tab) => (
+      <div className="p-4 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl backdrop-blur-md flex flex-col lg:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto items-center">
+          {/* Status Tabs */}
+          <div className="flex items-center gap-1 p-0.5 bg-zinc-950 border border-zinc-850 rounded-xl w-full sm:w-auto h-[30px]">
+            {[
+              { id: 'in_stock', label: 'Stoktakiler' },
+              { id: 'sold', label: 'Satılanlar' },
+              { id: 'returned', label: 'İadeler' },
+              { id: 'all', label: 'Tümü' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilters((prev) => ({ ...prev, status: tab.id }))}
+                className={`whitespace-nowrap px-3 text-xs font-semibold rounded-lg transition-all h-full flex items-center ${
+                  filters.status === tab.id
+                    ? 'bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60'
+                    : 'text-zinc-500 hover:text-zinc-455'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* View Mode Switcher */}
+          <div className="flex items-center gap-1 p-0.5 bg-zinc-950 border border-zinc-850 rounded-xl w-full sm:w-auto h-[30px]">
             <button
-              key={tab.id}
-              onClick={() => setFilters((prev) => ({ ...prev, status: tab.id }))}
-              className={`py-1.5 px-3 text-xs font-semibold rounded-lg transition-all ${
-                filters.status === tab.id
+              onClick={() => setViewMode('grouped')}
+              className={`whitespace-nowrap px-3 text-xs font-semibold rounded-lg transition-all h-full flex items-center ${
+                viewMode === 'grouped'
                   ? 'bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60'
                   : 'text-zinc-500 hover:text-zinc-455'
               }`}
             >
-              {tab.label}
+              Grup Görünümü
             </button>
-          ))}
+            <button
+              onClick={() => setViewMode('list')}
+              className={`whitespace-nowrap px-3 text-xs font-semibold rounded-lg transition-all h-full flex items-center ${
+                viewMode === 'list'
+                  ? 'bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60'
+                  : 'text-zinc-500 hover:text-zinc-455'
+              }`}
+            >
+              Tekil Liste
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center">
-          <select
-            value={filters.category_id || ''}
-            onChange={(e) => setFilters((prev) => ({ ...prev, category_id: e.target.value ? parseInt(e.target.value) : null }))}
-            className="w-full sm:w-40 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 text-zinc-300 text-xs focus:outline-none focus:border-amber-500/50"
-          >
-            <option value="">Tüm Kategoriler</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{translateCategory(cat.code)}</option>
-            ))}
-          </select>
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto items-center">
+          <div className="relative w-full sm:w-40 h-[30px]">
+            <select
+              value={filters.category_id || ''}
+              onChange={(e) => setFilters((prev) => ({ ...prev, category_id: e.target.value ? parseInt(e.target.value) : null }))}
+              className="w-full h-full bg-zinc-950 border border-zinc-800 rounded-xl pl-3.5 pr-9 text-zinc-300 text-xs focus:outline-none focus:border-amber-500/50 appearance-none cursor-pointer"
+            >
+              <option value="">Tüm Kategoriler</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{translateCategory(cat.code)}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-zinc-550 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
-          <div className="relative w-full sm:w-56">
-            <Search className="w-3.5 h-3.5 text-zinc-550 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <div className="relative w-full sm:w-56 h-[30px]">
+            <Search className="w-3.5 h-3.5 text-zinc-550 absolute left-3.5 top-1/2 -translate-y-1/2 animate-none" />
             <input
               type="text"
               value={filters.search || ''}
               onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
               placeholder="Barkod veya ürün adı..."
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-1.5 text-zinc-250 text-xs focus:outline-none focus:border-amber-500/50"
+              className="w-full h-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-4 text-zinc-250 text-xs focus:outline-none focus:border-amber-500/50"
             />
           </div>
         </div>
       </div>
 
       {/* Stock Items Table */}
-      <div className="p-5 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl backdrop-blur-md">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-zinc-850 text-zinc-450">
-                <th className="py-2.5 font-medium">Barkod</th>
-                <th className="py-2.5 font-medium">Ürün Adı</th>
-                <th className="py-2.5 font-medium">Kategori</th>
-                <th className="py-2.5 font-medium">Ayar</th>
-                <th className="py-2.5 font-medium">Brüt Ağırlık</th>
-                <th className="py-2.5 font-medium">Has Altın</th>
-                <th className="py-2.5 font-medium">Durum</th>
-                {showSoldDate && <th className="py-2.5 font-medium">Satış Tarihi</th>}
-                <th className="py-2.5 font-medium text-right">Aksiyonlar</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-850/50 text-zinc-300">
-              {loading ? (
-                <tr>
-                  <td colSpan={showSoldDate ? 9 : 8} className="py-8 text-center text-zinc-550">Yükleniyor...</td>
-                </tr>
-              ) : stockItems.length === 0 ? (
-                <tr>
-                  <td colSpan={showSoldDate ? 9 : 8} className="py-8 text-center text-zinc-500 font-medium">
-                    Kriterlere uygun stok kalemi bulunamadı.
-                  </td>
-                </tr>
-              ) : (
-                stockItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-zinc-950/20 transition-colors">
-                    <td className="py-3 font-mono font-bold text-zinc-200">{item.barcode}</td>
-                    <td className="py-3 font-semibold text-zinc-200">{item.product_name}</td>
-                    <td className="py-3 text-zinc-400">{translateCategory(item.category_code)}</td>
-                    <td className="py-3 font-medium">{getPurityLabel(item.karat)}</td>
-                    <td className="py-3 font-semibold">{item.weight_gram.toFixed(2)} gr</td>
-                    <td className="py-3 font-bold text-amber-500">{item.fine_gold_gram.toFixed(2)} gr Has</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                        item.status === 'in_stock'
-                          ? 'bg-emerald-500/10 text-emerald-400'
-                          : item.status === 'sold'
-                          ? 'bg-rose-500/10 text-rose-455'
-                          : 'bg-zinc-800 text-zinc-400'
-                      }`}>
-                        {item.status === 'in_stock' ? 'Stokta' : item.status === 'sold' ? 'Satıldı' : 'İade'}
-                      </span>
-                    </td>
-                    {showSoldDate && (
-                      <td className="py-3 text-zinc-400 font-medium">
-                        {item.sold_date
-                          ? item.sold_date.split('-').reverse().join('.')
-                          : '—'}
-                      </td>
-                    )}
-                    <td className="py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {item.status === 'in_stock' && (
-                          <>
-                            <button
-                              onClick={() => setSelectedForEdit(item)}
-                              className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-all rounded-lg"
-                              title="Stok Kartını Düzenle"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setSelectedForDelete(item)}
-                              className="p-1 hover:bg-zinc-800 text-rose-400 hover:text-rose-350 transition-all rounded-lg"
-                              title="Stok Kartını Sil"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setSelectedForSale(item)}
-                              className="px-2.5 py-1 bg-amber-650/15 hover:bg-amber-650/25 text-amber-500 border border-amber-650/15 transition-all rounded-lg font-semibold text-[10px]"
-                            >
-                              Satış Yap
-                            </button>
-                          </>
-                        )}
-                        {item.status === 'sold' && (
-                          <button
-                            onClick={() => setSelectedForReturn(item)}
-                            className="px-2.5 py-1 bg-rose-650/15 hover:bg-rose-650/25 text-rose-455 border border-rose-650/15 transition-all rounded-lg font-semibold text-[10px] flex items-center gap-1.5 ml-auto"
-                          >
-                            <ArrowLeftRight className="w-3 h-3" /> İade Al
-                          </button>
-                        )}
-                        {item.status === 'returned' && (
-                          <span className="text-[10px] text-zinc-550 font-semibold italic">Aksiyon Yok</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <StockTable
+        stockItems={stockItems}
+        viewMode={viewMode}
+        loading={loading}
+        showSoldDate={showSoldDate}
+        getPurityLabel={getPurityLabel}
+        translateCategory={translateCategory}
+        onEdit={setSelectedForEdit}
+        onDelete={setSelectedForDelete}
+        onSell={setSelectedForSale}
+        onReturn={setSelectedForReturn}
+      />
 
       {/* Modals */}
       <AddStockModal
