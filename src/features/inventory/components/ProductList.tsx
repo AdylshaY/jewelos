@@ -64,10 +64,42 @@ export default function ProductList({ activeDate }: ProductListProps) {
     }
   };
 
-  // Stats for in-stock items
-  const inStockItems = stockItems.filter((s) => s.status === 'in_stock');
-  const totalWeight = inStockItems.reduce((sum, s) => sum + s.weight_gram, 0);
-  const totalFineGold = inStockItems.reduce((sum, s) => sum + s.fine_gold_gram, 0);
+  // Dynamic stats calculation based on the active filter
+  const totalWeight = stockItems.reduce((sum, s) => sum + s.weight_gram, 0);
+  const totalFineGold = stockItems.reduce((sum, s) => sum + s.fine_gold_gram, 0);
+
+  // Dynamic labels for stats card depending on the filter selection
+  const getStatsLabels = () => {
+    switch (filters.status) {
+      case 'sold':
+        return {
+          count: 'Satılan Kalem',
+          weight: 'Satılan Toplam Brüt Ağırlık',
+          fineGold: 'Satılan Toplam Has Altın',
+        };
+      case 'returned':
+        return {
+          count: 'İade Alınan Kalem',
+          weight: 'İade Toplam Brüt Ağırlık',
+          fineGold: 'İade Toplam Has Altın',
+        };
+      case 'all':
+        return {
+          count: 'Toplam Kalem (Filtreli)',
+          weight: 'Toplam Brüt Ağırlık (Filtreli)',
+          fineGold: 'Toplam Has Altın (Filtreli)',
+        };
+      case 'in_stock':
+      default:
+        return {
+          count: 'Stoktaki Kalem',
+          weight: 'Stok Toplam Brüt Ağırlık',
+          fineGold: 'Stok Toplam Has Altın',
+        };
+    }
+  };
+
+  const statsLabels = getStatsLabels();
 
   // Show sold_date column when viewing sold/all
   const showSoldDate = filters.status === 'sold' || filters.status === 'all';
@@ -120,8 +152,8 @@ export default function ProductList({ activeDate }: ProductListProps) {
             <Tag className="w-5 h-5 text-amber-500" />
           </div>
           <div>
-            <span className="text-[10px] text-zinc-550 block font-semibold uppercase tracking-wider">Stoktaki Kalem</span>
-            <span className="text-xl font-extrabold text-zinc-200">{inStockItems.length} adet</span>
+            <span className="text-[10px] text-zinc-550 block font-semibold uppercase tracking-wider">{statsLabels.count}</span>
+            <span className="text-xl font-extrabold text-zinc-200">{stockItems.length} Adet</span>
           </div>
         </div>
         <div className="p-4 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl flex items-center gap-4">
@@ -129,7 +161,7 @@ export default function ProductList({ activeDate }: ProductListProps) {
             <Coins className="w-5 h-5 text-zinc-400" />
           </div>
           <div>
-            <span className="text-[10px] text-zinc-550 block font-semibold uppercase tracking-wider">Stok Toplam Brüt Ağırlık</span>
+            <span className="text-[10px] text-zinc-550 block font-semibold uppercase tracking-wider">{statsLabels.weight}</span>
             <span className="text-xl font-extrabold text-zinc-200">{totalWeight.toFixed(2)} gr</span>
           </div>
         </div>
@@ -138,7 +170,7 @@ export default function ProductList({ activeDate }: ProductListProps) {
             <Award className="w-5 h-5 text-amber-500" />
           </div>
           <div>
-            <span className="text-[10px] text-amber-500/70 block font-semibold uppercase tracking-wider">Stok Toplam Has Altın</span>
+            <span className="text-[10px] text-amber-500/70 block font-semibold uppercase tracking-wider">{statsLabels.fineGold}</span>
             <span className="text-xl font-black text-amber-500">{totalFineGold.toFixed(2)} gr Has</span>
           </div>
         </div>
