@@ -8,6 +8,7 @@
 select {
   appearance: none;
   padding-right: 2.5rem !important;
+  cursor: pointer;
 }
 
 select.py-2 {
@@ -20,4 +21,17 @@ select.py-2\.5 {
 
 select.py-1\.5 {
   height: 30px;
+}
+
+/* Global hover cursor settings */
+button,
+input[type='checkbox'],
+input[type='radio'] {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
 }
