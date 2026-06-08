@@ -106,15 +106,44 @@ export function useDailyVault(
     }
   };
 
-  // Close the daily vault
-  const closeVault = async (date: string) => {
+  // Close the daily vault with optional reconciliation notes
+  const closeVault = async (date: string, notes?: string) => {
     setLoading(true);
     setError(null);
     try {
-      await invoke('close_daily_vault', { date });
+      await invoke('close_daily_vault', { date, notes: notes || undefined });
       await fetchVaultData(date);
     } catch (err: any) {
       console.error('Failed to close vault:', err);
+      setError(err.toString());
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Perform atomic asset swap
+  const swapAssets = async (
+    fromAsset: string,
+    toAsset: string,
+    fromAmount: number,
+    toAmount: number,
+    notes?: string
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await invoke('swap_assets', {
+        vaultDate: selectedDate,
+        fromAsset,
+        toAsset,
+        fromAmount,
+        toAmount,
+        notes: notes || undefined,
+      });
+      await fetchVaultData(selectedDate);
+    } catch (err: any) {
+      console.error('Failed to swap assets:', err);
       setError(err.toString());
       throw err;
     } finally {
@@ -206,6 +235,7 @@ export function useDailyVault(
     openVault,
     addTransaction,
     closeVault,
+    swapAssets,
     formatCurrency,
     getAssetLabel,
     handlePrevDay,

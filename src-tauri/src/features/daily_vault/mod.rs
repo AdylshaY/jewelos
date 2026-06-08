@@ -387,6 +387,7 @@ pub async fn add_asset_transaction(
 pub async fn close_daily_vault(
     state: State<'_, DbState>,
     date: String,
+    notes: Option<String>,
 ) -> Result<(), String> {
     let conn = state.db.lock().map_err(|e| format!("Lock error: {}", e))?;
 
@@ -409,12 +410,81 @@ pub async fn close_daily_vault(
         return Err("Daily vault is already closed".to_string());
     }
 
-    // Update status to closed
+    // Update status to closed and save notes/reconciliation
     conn.execute(
-        "UPDATE daily_vault SET status = 'closed', updated_at = datetime('now') WHERE date = ?",
-        params![date],
+        "UPDATE daily_vault SET status = 'closed', notes = ?, updated_at = datetime('now') WHERE date = ?",
+        params![notes, date],
     )
     .map_err(|e| format!("Failed to close daily vault: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn swap_assets(
+    state: State<'_, DbState>,
+    vault_date: String,
+    from_asset: String,
+    to_asset: String,
+    from_amount: f64,
+    to_amount: f64,
+    notes: Option<String>,
+) -> Result<(), String> {
+    let mut conn = state.db.lock().map_err(|e| format!("Lock error: {}", e))?;
+
+    // 1. Verify vault exists and is open
+    let vault_status: Option<String> = conn
+        .query_row(
+            "SELECT status FROM daily_vault WHERE date = ?",
+            params![vault_date],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query vault status: {}", e))?;
+
+    let status = match vault_status {
+        Some(s) => s,
+        None => return Err(format!("Daily vault does not exist for date {}", vault_date)),
+    };
+
+    if status == "closed" {
+        return Err("Cannot perform swap in a closed vault".to_string());
+    }
+
+    // 2. Retrieve exchange rates for the date
+    let rates = get_rates_for_date(&conn, &vault_date)?
+        .ok_or_else(|| format!("Exchange rates not found for date {}", vault_date))?;
+
+    // 3. Calculate fine gold gram for both
+    let from_fine_gold = calculate_fine_gold(&from_asset, from_amount, &rates)?;
+    let to_fine_gold = calculate_fine_gold(&to_asset, to_amount, &rates)?;
+
+    // 4. Start transaction to insert both entries
+    let tx = conn
+        .transaction()
+        .map_err(|e| format!("Failed to start transaction: {}", e))?;
+
+    let default_desc = format!("Varlık Takası: {} -> {}", from_asset, to_asset);
+    let desc = notes.unwrap_or(default_desc);
+
+    // Insert source asset (out)
+    tx.execute(
+        "INSERT INTO asset_entries (vault_date, asset_type, direction, amount, fine_gold_gram, description) 
+         VALUES (?, ?, 'out', ?, ?, ?)",
+        params![vault_date, from_asset, from_amount, from_fine_gold, desc],
+    )
+    .map_err(|e| format!("Failed to insert source asset entry: {}", e))?;
+
+    // Insert target asset (in)
+    tx.execute(
+        "INSERT INTO asset_entries (vault_date, asset_type, direction, amount, fine_gold_gram, description) 
+         VALUES (?, ?, 'in', ?, ?, ?)",
+        params![vault_date, to_asset, to_amount, to_fine_gold, desc],
+    )
+    .map_err(|e| format!("Failed to insert target asset entry: {}", e))?;
+
+    tx.commit()
+        .map_err(|e| format!("Failed to commit swap transaction: {}", e))?;
 
     Ok(())
 }
