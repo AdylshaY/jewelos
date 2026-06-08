@@ -15,3 +15,7 @@ Before fixing:
 Avoid large rewrites.
 
 Prefer surgical fixes.
+
+## Verification
+
+Only perform code checks (compilation, tests, lint). Do NOT perform browser/UI checks manually or with browser subagents.

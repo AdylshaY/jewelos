@@ -57,3 +57,8 @@ Never create duplicate:
 - Tauri commands
 
 Always keep generated code consistent with the architecture.
+
+## Verification & Testing Rules
+
+- After development, only perform code checks (compilation, syntax, type checks, linting, tests).
+- Do NOT open the browser or use browser subagents to perform visual or UI checks (the user will do this manually).

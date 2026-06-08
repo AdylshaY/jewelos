@@ -18,3 +18,7 @@ Before changing code:
 3. Estimate impact
 
 Never change business behavior unless requested.
+
+## Verification
+
+Only perform code checks (compilation, tests, lint). Do NOT perform browser/UI checks.

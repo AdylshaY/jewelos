@@ -17,6 +17,6 @@ Then:
 2. Identify affected files
 3. Create implementation plan
 4. Implement
-5. Verify consistency
+5. Verify consistency (code check only; do NOT perform browser/UI checks)
 
 Never jump directly into coding.
