@@ -23,6 +23,7 @@ Foundation and Inventory Module
 - Build Daily Vault backend & UI
 - Build Inventory / Stock Management Module backend & UI
 - Build Sales Reports Module backend & UI
+- Build Database Backup & Restore feature under System Settings (Yedekleme ve Geri Yükleme)
 
 ## Active Goals
 

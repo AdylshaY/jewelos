@@ -45,9 +45,11 @@ Avoid long database locks.
 
 Restore flow:
 
-1. Close connections
-2. Replace database file
-3. Relaunch application
+1. Lock the active connection Mutex.
+2. Swap the active connection with a temporary in-memory connection (closes all file descriptors to `jewelos.db`).
+3. Delete active DB files (`jewelos.db`, WAL, and SHM) and copy/replace the database file with the backup.
+4. Reopen the database connection (running all pending migrations automatically via `init_db`).
+5. Swap the new connection back and reload the frontend (`window.location.reload()`) to refresh React state.
 
 ## Database Schema Snapshot
 
