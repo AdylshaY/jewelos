@@ -31,6 +31,10 @@ use features::inventory::{
 use features::sales_report::{
     get_sales_report,
 };
+use features::settings::{
+    backup_database,
+    restore_database,
+};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -75,7 +79,9 @@ pub fn run() {
             get_inventory_transactions,
             get_sales_report,
             update_stock_item,
-            delete_stock_item
+            delete_stock_item,
+            backup_database,
+            restore_database
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

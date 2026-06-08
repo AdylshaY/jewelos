@@ -2,6 +2,7 @@ import { useState } from 'react';
 import VaultDashboard from './features/daily_vault/components/VaultDashboard';
 import ProductList from './features/inventory/components/ProductList';
 import SalesReportPage from './features/sales_report/components/SalesReportPage';
+import SettingsPage from './features/settings/components/SettingsPage';
 import { getLocalDateString } from './features/daily_vault/hooks/useDailyVault';
 import { 
   Briefcase, 
@@ -71,15 +72,15 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => {}}
-              disabled={true}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-xl text-zinc-650 cursor-not-allowed"
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all focus:outline-none border ${
+                activeTab === 'settings'
+                  ? 'bg-zinc-800/60 text-zinc-100 border-zinc-700/50 shadow-inner shadow-black/10'
+                  : 'border-transparent text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
+              }`}
             >
-              <span className="flex items-center gap-3">
-                <Settings className="w-4 h-4 text-zinc-750" />
-                Sistem Ayarları
-              </span>
-              <span className="text-[9px] bg-zinc-850 text-zinc-500 px-1.5 py-0.5 rounded border border-zinc-800/60 font-semibold tracking-wider uppercase">Yakında</span>
+              <Settings className={`w-4 h-4 ${activeTab === 'settings' ? 'text-amber-500' : 'text-zinc-500'}`} />
+              Sistem Ayarları
             </button>
           </nav>
         </div>
@@ -112,6 +113,7 @@ export default function App() {
             <ProductList activeDate={selectedDate} />
           )}
           {activeTab === 'sales' && <SalesReportPage />}
+          {activeTab === 'settings' && <SettingsPage />}
         </section>
       </main>
     </div>
