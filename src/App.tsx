@@ -100,7 +100,7 @@ export default function App() {
 
       {/* Main Panel Area */}
       <main className="flex-1 flex flex-col h-full bg-zinc-950 overflow-y-auto">
-        <header className="h-16 border-b border-zinc-900 flex items-center justify-between px-8 bg-zinc-950/20 backdrop-blur-md select-none">
+        <header className="h-16 border-b border-zinc-900 flex items-center justify-between px-4 sm:px-6 md:px-8 bg-zinc-950/20 backdrop-blur-md select-none">
           <div className="text-xs text-zinc-500 font-semibold">
             JewelOS Monolith &bull; Phase 1 Foundation
           </div>
@@ -110,7 +110,7 @@ export default function App() {
           </div>
         </header>
 
-        <section className="flex-1 p-8 max-w-7xl w-full mx-auto">
+        <section className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto">
           {activeTab === 'vault' && (
             <VaultDashboard selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
           )}

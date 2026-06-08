@@ -268,7 +268,7 @@ export default function VaultDashboard({ selectedDate: propSelectedDate, setSele
             <h3 className='text-xs font-semibold text-zinc-400 uppercase tracking-wider'>
               Varlık Bakiyeleri
             </h3>
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4'>
               {summary?.balances.map((b) => (
                 <div
                   key={b.asset_type}
