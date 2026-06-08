@@ -95,21 +95,15 @@ export default function App() {
             </div>
             <HelpCircle className="w-4 h-4 text-zinc-500 hover:text-zinc-400 cursor-pointer" />
           </div>
+          <div className="mt-3 flex items-center justify-between text-[10px] text-zinc-600 px-1 font-semibold select-none">
+            <span>JewelOS v{__APP_VERSION__}</span>
+            <span>{import.meta.env.DEV ? 'Geliştirici Modu' : 'Yerel Mod'}</span>
+          </div>
         </div>
       </aside>
 
       {/* Main Panel Area */}
       <main className="flex-1 flex flex-col h-full bg-zinc-950 overflow-y-auto">
-        <header className="h-16 border-b border-zinc-900 flex items-center justify-between px-4 sm:px-6 md:px-8 bg-zinc-950/20 backdrop-blur-md select-none">
-          <div className="text-xs text-zinc-500 font-semibold">
-            JewelOS Monolith &bull; Phase 1 Foundation
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-xs text-zinc-450 font-bold">Veritabanı Çevrimdışı (Yerel)</span>
-          </div>
-        </header>
-
         <section className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto">
           {activeTab === 'vault' && (
             <VaultDashboard selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
