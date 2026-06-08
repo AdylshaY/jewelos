@@ -27,6 +27,7 @@ export default function ProductList({ activeDate }: ProductListProps) {
     loading,
     error,
     addCategory,
+    updateCategory,
     purchaseProduct,
     sellProduct,
     returnProduct,
@@ -276,6 +277,7 @@ export default function ProductList({ activeDate }: ProductListProps) {
         onClose={() => setIsCategoryModalOpen(false)}
         categories={categories}
         onAddCategory={addCategory}
+        onUpdateCategory={updateCategory}
         translateCategory={translateCategory}
       />
     </div>

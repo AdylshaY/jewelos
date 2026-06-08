@@ -78,6 +78,19 @@ export function useInventory() {
     }
   };
 
+  // Update category
+  const updateCategory = async (id: number, code: string, sortOrder: number) => {
+    setError(null);
+    try {
+      await invoke('update_category', { id, code, sortOrder });
+      await fetchCategories();
+    } catch (err: any) {
+      console.error('Failed to update category:', err);
+      setError(err.toString());
+      throw err;
+    }
+  };
+
   // Purchase / Add new product
   const purchaseProduct = async (
     vaultDate: string,
@@ -196,6 +209,7 @@ export function useInventory() {
     refreshProducts: fetchProducts,
     fetchTransactions,
     addCategory,
+    updateCategory,
     purchaseProduct,
     sellProduct,
     returnProduct,

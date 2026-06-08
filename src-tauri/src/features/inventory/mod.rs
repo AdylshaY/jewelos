@@ -256,6 +256,30 @@ pub async fn add_category(
 }
 
 #[tauri::command]
+pub async fn update_category(
+    state: State<'_, DbState>,
+    id: i64,
+    code: String,
+    sort_order: i32,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| format!("Lock error: {}", e))?;
+
+    let code_trimmed = code.trim().to_lowercase();
+    if code_trimmed.is_empty() {
+        return Err("Kategori kodu boş olamaz.".to_string());
+    }
+
+    conn.execute(
+        "UPDATE product_categories SET code = ?, sort_order = ? WHERE id = ?",
+        params![code_trimmed, sort_order, id],
+    )
+    .map_err(|e| format!("Kategori güncellenirken hata oluştu (Kategori adı benzersiz olmalıdır): {}", e))?;
+
+    Ok(())
+}
+
+
+#[tauri::command]
 pub async fn purchase_product(
     state: State<'_, DbState>,
     vault_date: String,

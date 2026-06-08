@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { ProductCategory } from '../types';
+import { Edit2, Check, X } from 'lucide-react';
 
 interface CategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   categories: ProductCategory[];
   onAddCategory: (code: string, sortOrder: number) => Promise<void>;
+  onUpdateCategory: (id: number, code: string, sortOrder: number) => Promise<void>;
   translateCategory: (code: string) => string;
 }
 
@@ -14,12 +16,18 @@ export default function CategoryModal({
   onClose,
   categories,
   onAddCategory,
+  onUpdateCategory,
   translateCategory,
 }: CategoryModalProps) {
   const [code, setCode] = useState('');
   const [sortOrder, setSortOrder] = useState('10');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Edit Mode state
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editCode, setEditCode] = useState('');
+  const [editSortOrder, setEditSortOrder] = useState('');
 
   if (!isOpen) return null;
 
@@ -46,6 +54,37 @@ export default function CategoryModal({
       setSortOrder('10');
     } catch (err: any) {
       setError(err.toString() || 'Kategori eklenirken hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEdit = (cat: ProductCategory) => {
+    setEditingCategoryId(cat.id);
+    setEditCode(cat.code);
+    setEditSortOrder(cat.sort_order.toString());
+  };
+
+  const handleEditSubmit = async (id: number) => {
+    setError(null);
+    const codeTrimmed = editCode.trim();
+    if (!codeTrimmed) {
+      setError('Kategori ismi boş olamaz.');
+      return;
+    }
+
+    const sort = parseInt(editSortOrder);
+    if (isNaN(sort)) {
+      setError('Sıralama değeri sayı olmalıdır.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onUpdateCategory(id, codeTrimmed, sort);
+      setEditingCategoryId(null);
+    } catch (err: any) {
+      setError(err.toString() || 'Kategori güncellenirken hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -78,7 +117,7 @@ export default function CategoryModal({
             <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Yeni Kategori Ekle</h4>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
-                <label className="block text-[11px] text-zinc-450 mb-1">Kategori Adı (İngilizce Kod)</label>
+                <label className="block text-[11px] text-zinc-455 mb-1">Kategori Adı (İngilizce Kod)</label>
                 <input
                   type="text"
                   value={code}
@@ -89,7 +128,7 @@ export default function CategoryModal({
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-zinc-450 mb-1">Sıralama</label>
+                <label className="block text-[11px] text-zinc-455 mb-1">Sıralama</label>
                 <input
                   type="number"
                   value={sortOrder}
@@ -111,13 +150,67 @@ export default function CategoryModal({
           {/* List existing */}
           <div className="space-y-3 pt-4 border-t border-zinc-850">
             <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Aktif Kategoriler</h4>
-            <div className="bg-zinc-950 border border-zinc-850 rounded-xl divide-y divide-zinc-850/60 max-h-48 overflow-y-auto">
-              {categories.map((cat) => (
-                <div key={cat.id} className="px-4 py-2.5 flex items-center justify-between text-sm text-zinc-300">
-                  <span className="font-semibold text-zinc-200">{translateCategory(cat.code)}</span>
-                  <span className="text-xs text-zinc-500">Sıra: {cat.sort_order} (Kod: {cat.code})</span>
-                </div>
-              ))}
+            <div className="bg-zinc-950 border border-zinc-850 rounded-xl divide-y divide-zinc-850/60 max-h-56 overflow-y-auto">
+              {categories.map((cat) => {
+                const isEditing = editingCategoryId === cat.id;
+                return (
+                  <div key={cat.id} className="px-4 py-2.5 flex items-center justify-between text-sm text-zinc-300 min-h-[52px]">
+                    {isEditing ? (
+                      <div className="flex items-center gap-2 w-full animate-in fade-in duration-100">
+                        <input
+                          type="text"
+                          value={editCode}
+                          onChange={(e) => setEditCode(e.target.value)}
+                          className="flex-1 min-w-0 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 text-xs focus:outline-none focus:border-amber-500/50"
+                          placeholder="Category Code"
+                          required
+                        />
+                        <input
+                          type="number"
+                          value={editSortOrder}
+                          onChange={(e) => setEditSortOrder(e.target.value)}
+                          className="w-16 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 text-xs focus:outline-none focus:border-amber-500/50"
+                          placeholder="Sort"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleEditSubmit(cat.id)}
+                          disabled={loading}
+                          className="p-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/20 rounded-md transition-colors"
+                          title="Kaydet"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategoryId(null)}
+                          disabled={loading}
+                          className="p-1.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-400 border border-zinc-750 rounded-md transition-colors"
+                          title="Vazgeç"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-zinc-200">{translateCategory(cat.code)}</span>
+                          <span className="text-[10px] text-zinc-500">Sıra: {cat.sort_order} &bull; Kod: {cat.code}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(cat)}
+                          className="p-1.5 bg-zinc-900 hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 border border-zinc-850 hover:border-zinc-800 transition-colors rounded-lg flex items-center justify-center"
+                          title="Düzenle"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -135,3 +228,4 @@ export default function CategoryModal({
     </div>
   );
 }
+
