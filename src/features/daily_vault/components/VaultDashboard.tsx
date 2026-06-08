@@ -13,6 +13,8 @@ import {
   Award,
   DollarSign,
   Layers,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 export default function VaultDashboard() {
@@ -30,6 +32,9 @@ export default function VaultDashboard() {
     closeVault,
     formatCurrency,
     getAssetLabel,
+    handlePrevDay,
+    handleNextDay,
+    handleGoToToday,
   } = useDailyVault();
 
   const [isOpenModalOpen, setIsOpenModalOpen] = useState(false);
@@ -95,7 +100,25 @@ export default function VaultDashboard() {
           </div>
         </div>
 
-        <div className='flex items-center gap-3'>
+        <div className='flex items-center gap-2'>
+          {/* Go to Today Button */}
+          <button
+            onClick={handleGoToToday}
+            className='px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 active:bg-zinc-900/60 text-zinc-300 border border-zinc-800 hover:border-zinc-750 transition-colors rounded-xl text-xs font-semibold cursor-pointer'
+            title='Bugüne Git'
+          >
+            Bugün
+          </button>
+
+          {/* Prev Day Button */}
+          <button
+            onClick={handlePrevDay}
+            className='p-2 bg-zinc-950 hover:bg-zinc-900 active:bg-zinc-900/60 text-zinc-300 border border-zinc-800 hover:border-zinc-750 transition-colors rounded-xl cursor-pointer'
+            title='Önceki Gün'
+          >
+            <ChevronLeft className='w-4 h-4' />
+          </button>
+
           {/* Date Picker */}
           <div className='flex items-center gap-2 px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-xl'>
             <Calendar className='w-4 h-4 text-zinc-400' />
@@ -107,10 +130,20 @@ export default function VaultDashboard() {
             />
           </div>
 
+          {/* Next Day Button */}
+          <button
+            onClick={handleNextDay}
+            className='p-2 bg-zinc-950 hover:bg-zinc-900 active:bg-zinc-900/60 text-zinc-300 border border-zinc-800 hover:border-zinc-750 transition-colors rounded-xl cursor-pointer'
+            title='Sonraki Gün'
+          >
+            <ChevronRight className='w-4 h-4' />
+          </button>
+
+          {/* Refresh Button */}
           <button
             onClick={refresh}
             disabled={loading}
-            className='p-2 bg-zinc-950 hover:bg-zinc-900 text-zinc-300 border border-zinc-800 hover:border-zinc-750 transition-colors rounded-xl disabled:opacity-50'
+            className='p-2 bg-zinc-950 hover:bg-zinc-900 active:bg-zinc-900/60 text-zinc-300 border border-zinc-800 hover:border-zinc-750 transition-colors rounded-xl disabled:opacity-50 cursor-pointer'
             title='Yenile'
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

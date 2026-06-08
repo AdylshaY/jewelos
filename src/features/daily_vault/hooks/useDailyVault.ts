@@ -1,14 +1,12 @@
-
-
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  VaultStatus, 
-  DailySummary, 
-  NewExchangeRates, 
-  OpeningBalances, 
-  NewAssetEntry, 
-  ExchangeRatesSummary 
+import {
+  VaultStatus,
+  DailySummary,
+  NewExchangeRates,
+  OpeningBalances,
+  NewAssetEntry,
+  ExchangeRatesSummary,
 } from '../types';
 
 export const getLocalDateString = (date = new Date()) => {
@@ -18,7 +16,8 @@ export const getLocalDateString = (date = new Date()) => {
 };
 
 export function useDailyVault() {
-  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
+  const [selectedDate, setSelectedDate] =
+    useState<string>(getLocalDateString());
   const [vaultStatus, setVaultStatus] = useState<VaultStatus | null>(null);
   const [summary, setSummary] = useState<DailySummary | null>(null);
   const [lastRates, setLastRates] = useState<ExchangeRatesSummary | null>(null);
@@ -31,17 +30,23 @@ export function useDailyVault() {
     setError(null);
     try {
       // 1. Get vault status
-      const status: VaultStatus | null = await invoke('get_vault_status', { date });
+      const status: VaultStatus | null = await invoke('get_vault_status', {
+        date,
+      });
       setVaultStatus(status);
 
       if (status) {
         // 2. If vault exists, get daily summary
-        const dailySummary: DailySummary = await invoke('get_daily_summary', { date });
+        const dailySummary: DailySummary = await invoke('get_daily_summary', {
+          date,
+        });
         setSummary(dailySummary);
       } else {
         setSummary(null);
         // If no vault exists, fetch the last known rates for suggestion
-        const lastKnownRates: ExchangeRatesSummary | null = await invoke('get_last_exchange_rates');
+        const lastKnownRates: ExchangeRatesSummary | null = await invoke(
+          'get_last_exchange_rates',
+        );
         setLastRates(lastKnownRates);
       }
     } catch (err: any) {
@@ -56,15 +61,15 @@ export function useDailyVault() {
   const openVault = async (
     date: string,
     rates: NewExchangeRates,
-    openingBalances: OpeningBalances | null
+    openingBalances: OpeningBalances | null,
   ) => {
     setLoading(true);
     setError(null);
     try {
-      await invoke('open_daily_vault', { 
-        date, 
-        rates, 
-        openingBalances: openingBalances || undefined 
+      await invoke('open_daily_vault', {
+        date,
+        rates,
+        openingBalances: openingBalances || undefined,
       });
       await fetchVaultData(date);
     } catch (err: any) {
@@ -121,11 +126,20 @@ export function useDailyVault() {
   const formatCurrency = (amount: number, assetType: string) => {
     switch (assetType) {
       case 'TRY':
-        return amount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        return amount.toLocaleString('tr-TR', {
+          style: 'currency',
+          currency: 'TRY',
+        });
       case 'USD':
-        return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+        return amount.toLocaleString('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        });
       case 'EUR':
-        return amount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+        return amount.toLocaleString('de-DE', {
+          style: 'currency',
+          currency: 'EUR',
+        });
       case 'FINE_GOLD':
       case 'PRODUCT':
         return `${amount.toFixed(2)} g`;
@@ -151,6 +165,30 @@ export function useDailyVault() {
     }
   };
 
+  const handlePrevDay = () => {
+    const parts = selectedDate.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const d = new Date(year, month, day);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(getLocalDateString(d));
+  };
+
+  const handleNextDay = () => {
+    const parts = selectedDate.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const d = new Date(year, month, day);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(getLocalDateString(d));
+  };
+
+  const handleGoToToday = () => {
+    setSelectedDate(getLocalDateString(new Date()));
+  };
+
   return {
     selectedDate,
     setSelectedDate,
@@ -165,5 +203,8 @@ export function useDailyVault() {
     closeVault,
     formatCurrency,
     getAssetLabel,
+    handlePrevDay,
+    handleNextDay,
+    handleGoToToday,
   };
 }
