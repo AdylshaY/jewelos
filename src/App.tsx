@@ -3,6 +3,7 @@ import VaultDashboard from './features/daily_vault/components/VaultDashboard';
 import ProductList from './features/inventory/components/ProductList';
 import SalesReportPage from './features/sales_report/components/SalesReportPage';
 import SettingsPage from './features/settings/components/SettingsPage';
+import CRMPage from './features/crm/components/CRMPage';
 import OnboardingWizard from './core/components/OnboardingWizard';
 import { useSettings } from './features/settings/hooks/useSettings';
 import { getLocalDateString } from './features/daily_vault/hooks/useDailyVault';
@@ -12,11 +13,12 @@ import {
   BarChart3,
   Settings, 
   HelpCircle,
-  Gem
+  Gem,
+  Users
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'vault' | 'inventory' | 'sales' | 'settings'>('vault');
+  const [activeTab, setActiveTab] = useState<'vault' | 'inventory' | 'sales' | 'settings' | 'crm'>('vault');
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
 
   const {
@@ -120,6 +122,18 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => setActiveTab('crm')}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all focus:outline-none border ${
+                activeTab === 'crm'
+                  ? 'bg-zinc-800/60 text-zinc-100 border-zinc-700/50 shadow-inner shadow-black/10'
+                  : 'border-transparent text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
+              }`}
+            >
+              <Users className={`w-4 h-4 ${activeTab === 'crm' ? 'text-amber-500' : 'text-zinc-500'}`} />
+              Müşteri / CRM
+            </button>
+
+            <button
               onClick={() => setActiveTab('settings')}
               className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all focus:outline-none border ${
                 activeTab === 'settings'
@@ -161,6 +175,7 @@ export default function App() {
             <ProductList activeDate={selectedDate} />
           )}
           {activeTab === 'sales' && <SalesReportPage theme={theme} />}
+          {activeTab === 'crm' && <CRMPage activeDate={selectedDate} />}
           {activeTab === 'settings' && <SettingsPage theme={theme} setTheme={setTheme} />}
         </section>
       </main>

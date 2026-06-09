@@ -43,6 +43,14 @@ use features::settings::{
     is_onboarding_completed,
     complete_onboarding,
 };
+use features::crm::{
+    get_customers,
+    get_customer_details,
+    add_customer,
+    update_customer,
+    delete_customer,
+    add_customer_transaction,
+};
 
 #[cfg(debug_assertions)]
 use features::settings::dev_reset_database;
@@ -99,8 +107,14 @@ pub fn run() {
             verify_admin_pin,
             remove_admin_pin,
             verify_recovery_key,
-                        is_onboarding_completed,
+            is_onboarding_completed,
             complete_onboarding,
+            get_customers,
+            get_customer_details,
+            add_customer,
+            update_customer,
+            delete_customer,
+            add_customer_transaction,
             #[cfg(debug_assertions)]
             dev_reset_database
         ])

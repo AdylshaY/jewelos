@@ -71,6 +71,8 @@ export interface SaleParams {
   price: number;
   payment_asset: 'TRY' | 'USD' | 'EUR' | 'FINE_GOLD';
   customer_name: string | null;
+  customer_id: number | null;
+  is_on_credit: boolean | null;
   notes: string | null;
 }
 
@@ -88,6 +90,7 @@ export interface InventoryTransaction {
   price_try: number | null;
   payment_asset: string | null;
   counterparty: string | null;
+  customer_id: number | null;
   notes: string | null;
   created_at: string;
 }

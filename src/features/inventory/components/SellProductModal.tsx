@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StockItem, SaleParams } from '../types';
+import { useCRM } from '../../crm/hooks/useCRM';
+import { ChevronDown } from 'lucide-react';
 
 interface SellProductModalProps {
   isOpen: boolean;
@@ -16,12 +18,30 @@ export default function SellProductModal({
   activeDate,
   onSell,
 }: SellProductModalProps) {
+  const { customers, fetchCustomers } = useCRM();
+  
   const [price, setPrice] = useState('');
   const [paymentAsset, setPaymentAsset] = useState<'TRY' | 'USD' | 'EUR' | 'FINE_GOLD'>('TRY');
   const [customerName, setCustomerName] = useState('');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [isOnCredit, setIsOnCredit] = useState(false);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchCustomers();
+      // Reset state on open
+      setPrice('');
+      setCustomerName('');
+      setSelectedCustomerId(null);
+      setIsOnCredit(false);
+      setNotes('');
+      setPaymentAsset('TRY');
+      setError(null);
+    }
+  }, [isOpen, fetchCustomers]);
 
   if (!isOpen || !stockItem) return null;
 
@@ -35,6 +55,11 @@ export default function SellProductModal({
       return;
     }
 
+    if (isOnCredit && !selectedCustomerId) {
+      setError('Veresiye satış yapabilmek için müşteri seçmelisiniz.');
+      return;
+    }
+
     setLoading(true);
     try {
       await onSell({
@@ -43,14 +68,11 @@ export default function SellProductModal({
         price: prc,
         payment_asset: paymentAsset,
         customer_name: customerName.trim() || null,
+        customer_id: selectedCustomerId,
+        is_on_credit: selectedCustomerId ? isOnCredit : false,
         notes: notes.trim() || null,
       });
 
-      // Reset state on success
-      setPrice('');
-      setCustomerName('');
-      setNotes('');
-      setPaymentAsset('TRY');
       onClose();
     } catch (err: any) {
       setError(err.toString() || 'Satış kaydedilirken hata oluştu.');
@@ -119,31 +141,70 @@ export default function SellProductModal({
             </div>
             <div>
               <label className="block text-xs text-zinc-450 mb-1">Ödeme Türü</label>
-              <select
-                value={paymentAsset}
-                onChange={(e: any) => setPaymentAsset(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50"
-                required
-              >
-                <option value="TRY">TRY (Türk Lirası)</option>
-                <option value="USD">USD (Dolar)</option>
-                <option value="EUR">EUR (Euro)</option>
-                <option value="FINE_GOLD">FINE_GOLD (Has Altın)</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={paymentAsset}
+                  onChange={(e: any) => setPaymentAsset(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50 appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="TRY">TRY (Türk Lirası)</option>
+                  <option value="USD">USD (Dolar)</option>
+                  <option value="EUR">EUR (Euro)</option>
+                  <option value="FINE_GOLD">FINE_GOLD (Has Altın)</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
           </div>
 
-          {/* Customer */}
+          {/* Customer Selection */}
           <div>
-            <label className="block text-xs text-zinc-450 mb-1">Müşteri Adı (Opsiyonel)</label>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Örn: Ahmet Yılmaz"
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50"
-            />
+            <label className="block text-xs text-zinc-450 mb-1">Müşteri (Cari Kayıt)</label>
+            <div className="relative">
+              <select
+                value={selectedCustomerId || ''}
+                onChange={(e) => {
+                  const val = e.target.value ? parseInt(e.target.value) : null;
+                  setSelectedCustomerId(val);
+                  if (val) {
+                    const cust = customers.find(c => c.id === val);
+                    setCustomerName(cust ? cust.name : '');
+                  } else {
+                    setCustomerName('');
+                    setIsOnCredit(false);
+                  }
+                }}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50 appearance-none cursor-pointer"
+              >
+                <option value="">-- Müşteri Seçilmedi (Perakende Satış) --</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.phone ? `(${c.phone})` : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
+
+          {/* On Credit Toggle */}
+          {selectedCustomerId && (
+            <label className="flex items-center gap-2.5 p-3 bg-zinc-950 border border-zinc-850 rounded-xl cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isOnCredit}
+                onChange={(e) => setIsOnCredit(e.target.checked)}
+                className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-0 focus:ring-offset-0"
+              />
+              <div className="text-[11px] text-zinc-300 font-medium leading-tight">
+                <span>Veresiye / Cari Hesaba Borç Olarak Kaydet</span>
+                <span className="block text-[9px] text-zinc-550 font-normal mt-0.5">
+                  Ödeme günlük kasaya girmeyecek, müşterinin borç bakiyesini artıracaktır.
+                </span>
+              </div>
+            </label>
+          )}
 
           {/* Notes */}
           <div>

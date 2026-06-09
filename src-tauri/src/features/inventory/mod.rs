@@ -69,6 +69,8 @@ pub struct SaleParams {
     pub price: f64,
     pub payment_asset: String,
     pub customer_name: Option<String>,
+    pub customer_id: Option<i64>,
+    pub is_on_credit: Option<bool>,
     pub notes: Option<String>,
 }
 
@@ -95,6 +97,7 @@ pub struct InventoryTransaction {
     pub price_try: Option<f64>,
     pub payment_asset: Option<String>,
     pub counterparty: Option<String>,
+    pub customer_id: Option<i64>,
     pub notes: Option<String>,
     pub created_at: String,
 }
@@ -560,19 +563,19 @@ pub async fn sell_stock_item(
         .map_err(|e| format!("Failed to start transaction: {}", e))?;
 
     // Fetch stock item info
-    let item: Option<(i64, String, u32, f64, String)> = tx
+    let item: Option<(i64, String, String, u32, f64, String)> = tx
         .query_row(
-            "SELECT s.id, p.name, p.karat, s.weight_gram, s.status
+            "SELECT s.id, p.name, s.barcode, p.karat, s.weight_gram, s.status
              FROM stock_items s
              JOIN products p ON s.product_id = p.id
              WHERE s.id = ?",
             params![params.stock_item_id],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?)),
         )
         .optional()
         .map_err(|e| format!("Stok kalemi sorgulanamadı: {}", e))?;
 
-    let (_id, name, karat, weight_gram, item_status) = match item {
+    let (_id, name, barcode, karat, weight_gram, item_status) = match item {
         Some(i) => i,
         None => return Err("Stok kalemi bulunamadı.".to_string()),
     };
@@ -591,8 +594,8 @@ pub async fn sell_stock_item(
     // Create sale transaction
     let fine_gold = weight_gram * purity_ratio(karat);
     tx.execute(
-        "INSERT INTO inventory_transactions (stock_item_id, vault_date, transaction_type, quantity, weight_gram, karat, fine_gold_gram, price_try, payment_asset, counterparty, notes)
-         VALUES (?, ?, 'sale', 1, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO inventory_transactions (stock_item_id, vault_date, transaction_type, quantity, weight_gram, karat, fine_gold_gram, price_try, payment_asset, counterparty, customer_id, notes)
+         VALUES (?, ?, 'sale', 1, ?, ?, ?, ?, ?, ?, ?, ?)",
         params![
             params.stock_item_id,
             params.vault_date,
@@ -602,6 +605,7 @@ pub async fn sell_stock_item(
             params.price,
             params.payment_asset,
             params.customer_name,
+            params.customer_id,
             params.notes
         ],
     )
@@ -622,24 +626,78 @@ pub async fn sell_stock_item(
         _ => return Err(format!("Geçersiz ödeme varlığı: {}", params.payment_asset)),
     };
 
-    let description = format!(
-        "Ürün Satışı: {} (Müşteri: {})",
-        name,
-        params.customer_name.clone().unwrap_or_else(|| "-".to_string())
-    );
+    let inventory_transaction_id = tx.last_insert_rowid();
 
-    tx.execute(
-        "INSERT INTO asset_entries (vault_date, asset_type, direction, amount, fine_gold_gram, description)
-         VALUES (?, ?, 'in', ?, ?, ?)",
-        params![
-            params.vault_date,
-            params.payment_asset,
-            params.price,
-            asset_fine_gold,
-            description
-        ],
-    )
-    .map_err(|e| format!("Kasa nakit giriş kaydı eklenirken hata: {}", e))?;
+    if params.is_on_credit.unwrap_or(false) {
+        let customer_id = params.customer_id.ok_or("Veresiye satış için bir müşteri seçilmelidir.")?;
+        
+        tx.execute(
+            "INSERT INTO customer_transactions (customer_id, vault_date, transaction_type, direction, asset_type, amount, fine_gold_gram, notes, inventory_transaction_id)
+             VALUES (?, ?, 'sale_debt', 'debt', ?, ?, ?, ?, ?)",
+            params![
+                customer_id,
+                params.vault_date,
+                params.payment_asset,
+                params.price,
+                asset_fine_gold,
+                format!("Veresiye Ürün Satışı: {} ({})", name, barcode),
+                inventory_transaction_id
+            ]
+        )
+        .map_err(|e| format!("Müşteri cari hesabı borç kaydı oluşturulamadı: {}", e))?;
+    } else {
+        let description = format!(
+            "Ürün Satışı: {} (Müşteri: {})",
+            name,
+            params.customer_name.clone().unwrap_or_else(|| "-".to_string())
+        );
+
+        tx.execute(
+            "INSERT INTO asset_entries (vault_date, asset_type, direction, amount, fine_gold_gram, description)
+             VALUES (?, ?, 'in', ?, ?, ?)",
+            params![
+                params.vault_date,
+                params.payment_asset,
+                params.price,
+                asset_fine_gold,
+                description
+            ],
+        )
+        .map_err(|e| format!("Kasa nakit giriş kaydı eklenirken hata: {}", e))?;
+
+        if let Some(customer_id) = params.customer_id {
+            // Register net-zero transaction pair under customer ledger (debit purchase, credit cash payment)
+            tx.execute(
+                "INSERT INTO customer_transactions (customer_id, vault_date, transaction_type, direction, asset_type, amount, fine_gold_gram, notes, inventory_transaction_id)
+                 VALUES (?, ?, 'sale_debt', 'debt', ?, ?, ?, ?, ?)",
+                params![
+                    customer_id,
+                    params.vault_date,
+                    params.payment_asset,
+                    params.price,
+                    asset_fine_gold,
+                    format!("Peşin Ürün Satışı: {} ({})", name, barcode),
+                    inventory_transaction_id
+                ]
+            )
+            .map_err(|e| format!("Müşteri cari borç kaydı oluşturulamadı: {}", e))?;
+
+            tx.execute(
+                "INSERT INTO customer_transactions (customer_id, vault_date, transaction_type, direction, asset_type, amount, fine_gold_gram, notes, inventory_transaction_id)
+                 VALUES (?, ?, 'payment', 'credit', ?, ?, ?, ?, ?)",
+                params![
+                    customer_id,
+                    params.vault_date,
+                    params.payment_asset,
+                    params.price,
+                    asset_fine_gold,
+                    format!("Peşin Satış Ödemesi (Kasa): {} ({})", name, barcode),
+                    inventory_transaction_id
+                ]
+            )
+            .map_err(|e| format!("Müşteri cari ödeme kaydı oluşturulamadı: {}", e))?;
+        }
+    }
 
     tx.commit()
         .map_err(|e| format!("Failed to commit stock sale: {}", e))?;
@@ -751,7 +809,7 @@ pub async fn get_inventory_transactions(
     let conn = state.db.lock().map_err(|e| format!("Lock error: {}", e))?;
 
     let mut query = String::from(
-        "SELECT t.id, t.stock_item_id, p.name, s.barcode, t.vault_date, t.transaction_type, t.quantity, t.weight_gram, t.karat, t.fine_gold_gram, t.price_try, t.payment_asset, t.counterparty, t.notes, t.created_at
+        "SELECT t.id, t.stock_item_id, p.name, s.barcode, t.vault_date, t.transaction_type, t.quantity, t.weight_gram, t.karat, t.fine_gold_gram, t.price_try, t.payment_asset, t.counterparty, t.customer_id, t.notes, t.created_at
          FROM inventory_transactions t
          JOIN stock_items s ON t.stock_item_id = s.id
          JOIN products p ON s.product_id = p.id"
@@ -785,8 +843,9 @@ pub async fn get_inventory_transactions(
                 price_try: row.get(10)?,
                 payment_asset: row.get(11)?,
                 counterparty: row.get(12)?,
-                notes: row.get(13)?,
-                created_at: row.get(14)?,
+                customer_id: row.get(13)?,
+                notes: row.get(14)?,
+                created_at: row.get(15)?,
             })
         })
         .map_err(|e| format!("Failed to query inventory transactions: {}", e))?;
