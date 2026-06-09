@@ -32,6 +32,7 @@ Foundation and Inventory Module
 - Build dynamic Expense/Revenue transaction categorization (Kira, Fatura, Yemek, Maaş vb.)
 - Restructure Sales Reports into "Raporlar & Analiz" with sub-tabs for Sales Analysis and Vault Gider/Gelir Analizi (Pie & Bar charts, detail tables)
 - Fix database query column name mismatches in CRM feature
+- Replace default Tauri app icons and browser favicon with a custom luxury JewelOS emblem
 
 ## Active Goals
 
