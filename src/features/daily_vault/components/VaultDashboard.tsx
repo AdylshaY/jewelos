@@ -14,6 +14,7 @@ import {
   Coins,
   Award,
   DollarSign,
+  Euro,
   Layers,
   ChevronLeft,
   ChevronRight,
@@ -62,8 +63,9 @@ export default function VaultDashboard({ selectedDate: propSelectedDate, setSele
       case 'TRY':
         return <Coins className='w-5 h-5 text-zinc-400' />;
       case 'USD':
-      case 'EUR':
         return <DollarSign className='w-5 h-5 text-zinc-450' />;
+      case 'EUR':
+        return <Euro className='w-5 h-5 text-zinc-450' />;
       case 'FINE_GOLD':
         return <Award className='w-5 h-5 text-amber-500' />;
       case 'PRODUCT':
