@@ -50,6 +50,8 @@ jobs:
 
       - name: Check if version is already released
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "Triggered by tag push. Skipping duplicate release check."
@@ -57,10 +59,9 @@ jobs:
             VERSION=$(node -e "console.log(require('./src-tauri/tauri.conf.json').version)")
             TAG_NAME="app-v$VERSION"
             
-            git fetch --tags origin
-            
-            if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-              echo "::error::Version $VERSION (tag: $TAG_NAME) has already been released/tagged!"
+            # Check if a release or draft for this tag already exists on GitHub
+            if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+              echo "::error::Version $VERSION (tag: $TAG_NAME) has already been released or exists as a draft on GitHub!"
               echo "::error::Please bump the version in package.json and src-tauri/tauri.conf.json before pushing."
               exit 1
             else
