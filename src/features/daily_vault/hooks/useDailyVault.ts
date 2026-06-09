@@ -86,6 +86,17 @@ export function useDailyVault(
     }
   };
 
+  // Fetch live exchange rates from configured provider
+  const fetchLiveRates = async (): Promise<ExchangeRatesSummary> => {
+    try {
+      const rates: ExchangeRatesSummary = await invoke('fetch_live_rates');
+      return rates;
+    } catch (err: any) {
+      console.error('Failed to fetch live rates:', err);
+      throw err;
+    }
+  };
+
   // Add an asset transaction
   const addTransaction = async (entry: Omit<NewAssetEntry, 'vault_date'>) => {
     setLoading(true);
@@ -233,6 +244,7 @@ export function useDailyVault(
     error,
     refresh: () => fetchVaultData(selectedDate),
     openVault,
+    fetchLiveRates,
     addTransaction,
     closeVault,
     swapAssets,

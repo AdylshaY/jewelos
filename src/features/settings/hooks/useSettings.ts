@@ -8,6 +8,8 @@ export function useSettings() {
   const [pinLoading, setPinLoading] = useState(false);
   const [isPinSet, setIsPinSet] = useState<boolean | null>(null);
   const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
+  const [rateProvider, setRateProvider] = useState<string>('tcmb');
+  const [rateApiKey, setRateApiKey] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -43,9 +45,20 @@ export function useSettings() {
     }
   };
 
+  const fetchRateSettings = async () => {
+    try {
+      const settings: { provider: string; api_key: string } = await invoke('get_rate_settings');
+      setRateProvider(settings.provider);
+      setRateApiKey(settings.api_key);
+    } catch (err) {
+      console.error('Failed to fetch rate settings:', err);
+    }
+  };
+
   useEffect(() => {
     checkPinStatus();
     checkOnboardingStatus();
+    fetchRateSettings();
   }, []);
 
   const handleBackup = async () => {
@@ -133,6 +146,19 @@ export function useSettings() {
     }
   };
 
+  const handleSaveRateSettings = async (provider: string, apiKey: string) => {
+    clearMessages();
+    try {
+      await invoke('save_rate_settings', { provider, apiKey });
+      setRateProvider(provider);
+      setRateApiKey(apiKey);
+      setSuccessMessage('Kur entegrasyon ayarları başarıyla kaydedildi.');
+    } catch (err: any) {
+      setErrorMessage(err?.toString() || 'Ayarlar kaydedilirken bir hata oluştu.');
+      throw err;
+    }
+  };
+
   return {
     backupLoading,
     restoreLoading,
@@ -150,5 +176,8 @@ export function useSettings() {
     handleRemovePin,
     handleCompleteOnboarding,
     checkPinStatus,
+    rateProvider,
+    rateApiKey,
+    handleSaveRateSettings,
   };
 }

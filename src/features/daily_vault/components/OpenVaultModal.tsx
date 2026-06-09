@@ -6,6 +6,7 @@ interface OpenVaultModalProps {
   onClose: () => void;
   onSubmit: (rates: NewExchangeRates, balances: OpeningBalances | null) => Promise<void>;
   lastRates: ExchangeRatesSummary | null;
+  fetchLiveRates: () => Promise<ExchangeRatesSummary>;
   date: string;
 }
 
@@ -14,6 +15,7 @@ export default function OpenVaultModal({
   onClose,
   onSubmit,
   lastRates,
+  fetchLiveRates,
   date,
 }: OpenVaultModalProps) {
   const [usdBuy, setUsdBuy] = useState('');
@@ -34,26 +36,45 @@ export default function OpenVaultModal({
   const [loading, setLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Pre-fill last rates if available
+  const [ratesSource, setRatesSource] = useState<'live' | 'fallback' | 'empty' | 'loading'>('empty');
+
+  // Fetch live rates on modal open
   useEffect(() => {
-    if (lastRates) {
-      setUsdBuy(lastRates.usd_buy.toString());
-      setUsdSell(lastRates.usd_sell.toString());
-      setEurBuy(lastRates.eur_buy.toString());
-      setEurSell(lastRates.eur_sell.toString());
-      setGoldBuy(lastRates.gold_buy.toString());
-      setGoldSell(lastRates.gold_sell.toString());
-    } else {
-      // Clear inputs if no history
-      setUsdBuy('');
-      setUsdSell('');
-      setEurBuy('');
-      setEurSell('');
-      setGoldBuy('');
-      setGoldSell('');
-      setShowBalances(true); // First vault ever, require balances setup
+    if (isOpen) {
+      setRatesSource('loading');
+      fetchLiveRates()
+        .then((rates) => {
+          setUsdBuy(rates.usd_buy.toString());
+          setUsdSell(rates.usd_sell.toString());
+          setEurBuy(rates.eur_buy.toString());
+          setEurSell(rates.eur_sell.toString());
+          setGoldBuy(rates.gold_buy.toString());
+          setGoldSell(rates.gold_sell.toString());
+          setRatesSource('live');
+        })
+        .catch((err) => {
+          console.error('Failed to fetch live rates, using fallback:', err);
+          if (lastRates) {
+            setUsdBuy(lastRates.usd_buy.toString());
+            setUsdSell(lastRates.usd_sell.toString());
+            setEurBuy(lastRates.eur_buy.toString());
+            setEurSell(lastRates.eur_sell.toString());
+            setGoldBuy(lastRates.gold_buy.toString());
+            setGoldSell(lastRates.gold_sell.toString());
+            setRatesSource('fallback');
+          } else {
+            setUsdBuy('');
+            setUsdSell('');
+            setEurBuy('');
+            setEurSell('');
+            setGoldBuy('');
+            setGoldSell('');
+            setRatesSource('empty');
+            setShowBalances(true); // First vault setup
+          }
+        });
     }
-  }, [lastRates, isOpen]);
+  }, [isOpen, lastRates]);
 
   if (!isOpen) return null;
 
@@ -142,7 +163,18 @@ export default function OpenVaultModal({
 
           {/* Rates Grid */}
           <div className="space-y-4">
-            <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Günlük Döviz & Altın Kurları (TRY)</h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Günlük Döviz & Altın Kurları (TRY)</h4>
+              {ratesSource === 'loading' && (
+                <span className="text-[10px] bg-zinc-800 text-zinc-450 px-2 py-0.5 rounded animate-pulse">Yükleniyor...</span>
+              )}
+              {ratesSource === 'live' && (
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-450 px-2 py-0.5 rounded border border-emerald-500/20 font-medium">Canlı Kurlar</span>
+              )}
+              {ratesSource === 'fallback' && (
+                <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded border border-amber-500/20 font-medium">Kayıtlı Son Kurlar</span>
+              )}
+            </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>

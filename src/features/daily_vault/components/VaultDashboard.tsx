@@ -36,6 +36,7 @@ export default function VaultDashboard({ selectedDate: propSelectedDate, setSele
     error,
     refresh,
     openVault,
+    fetchLiveRates,
     addTransaction,
     closeVault,
     swapAssets,
@@ -513,6 +514,7 @@ export default function VaultDashboard({ selectedDate: propSelectedDate, setSele
         onClose={() => setIsOpenModalOpen(false)}
         onSubmit={(rates, balances) => openVault(selectedDate, rates, balances)}
         lastRates={lastRates}
+        fetchLiveRates={fetchLiveRates}
         date={selectedDate}
       />
 

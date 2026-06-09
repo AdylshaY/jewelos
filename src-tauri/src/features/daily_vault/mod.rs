@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use crate::db::DbState;
 
+pub mod rates;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExchangeRatesSummary {
     pub usd_buy: f64,
@@ -227,6 +229,75 @@ pub async fn get_last_exchange_rates(
     match latest_date {
         Some(date) => get_rates_for_date(&conn, &date),
         None => Ok(None),
+    }
+}
+
+#[tauri::command]
+pub async fn fetch_live_rates(state: State<'_, DbState>) -> Result<ExchangeRatesSummary, String> {
+    let (provider, api_key_val, latest_rate_date, last_gold_val) = {
+        let conn = state.db.lock().map_err(|e| format!("Lock error: {}", e))?;
+
+        // Load rate settings
+        let provider: Option<String> = conn
+            .query_row(
+                "SELECT value FROM system_settings WHERE key = 'rate_provider'",
+                [],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| format!("Failed to query rate provider setting: {}", e))?;
+
+        let api_key: Option<String> = conn
+            .query_row(
+                "SELECT value FROM system_settings WHERE key = 'rate_api_key'",
+                [],
+                |row| row.get(0),
+                )
+            .optional()
+            .map_err(|e| format!("Failed to query rate API key setting: {}", e))?;
+
+        let provider = provider.unwrap_or_else(|| "tcmb".to_string());
+        let api_key_val = api_key.unwrap_or_default();
+
+        // Get last gold rate for TCMB gold fallback
+        let latest_rate_date: Option<String> = conn
+            .query_row(
+                "SELECT rate_date FROM exchange_rates ORDER BY rate_date DESC LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| format!("Failed to query latest rate date: {}", e))?;
+
+        let mut last_gold_val = 0.0;
+        if let Some(date) = &latest_rate_date {
+            if let Some(rates) = get_rates_for_date(&conn, date)? {
+                last_gold_val = rates.gold_buy;
+            }
+        }
+        
+        (provider, api_key_val, latest_rate_date, last_gold_val)
+    }; // MutexGuard is dropped here
+
+    let rates_res = match provider.as_str() {
+        "tcmb" => rates::fetch_tcmb_rates(last_gold_val).await,
+        "altin_api" => rates::fetch_altin_api_rates(&api_key_val).await,
+        "genel_para" => rates::fetch_genel_para_rates(&api_key_val).await,
+        _ => Err(format!("Bilinmeyen kur sağlayıcısı: {}", provider)),
+    };
+
+    match rates_res {
+        Ok(rates) => Ok(rates),
+        Err(fetch_err) => {
+            // Graceful fallback: load last known rates from database
+            let conn = state.db.lock().map_err(|e| format!("Lock error: {}", e))?;
+            if let Some(date) = latest_rate_date {
+                if let Some(rates) = get_rates_for_date(&conn, &date)? {
+                    return Ok(rates);
+                }
+            }
+            Err(format!("Canlı kurlar alınamadı ve sistemde kayıtlı eski kur bulunamadı: {}", fetch_err))
+        }
     }
 }
 

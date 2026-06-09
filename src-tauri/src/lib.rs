@@ -13,6 +13,7 @@ use features::daily_vault::{
     close_daily_vault,
     get_daily_summary,
     swap_assets,
+    fetch_live_rates,
 };
 use features::inventory::{
     get_products,
@@ -42,6 +43,8 @@ use features::settings::{
     verify_recovery_key,
     is_onboarding_completed,
     complete_onboarding,
+    get_rate_settings,
+    save_rate_settings,
 };
 use features::crm::{
     get_customers,
@@ -81,6 +84,7 @@ pub fn run() {
             greet,
             get_vault_status,
             get_last_exchange_rates,
+            fetch_live_rates,
             open_daily_vault,
             add_asset_transaction,
             close_daily_vault,
@@ -109,6 +113,8 @@ pub fn run() {
             verify_recovery_key,
             is_onboarding_completed,
             complete_onboarding,
+            get_rate_settings,
+            save_rate_settings,
             get_customers,
             get_customer_details,
             add_customer,

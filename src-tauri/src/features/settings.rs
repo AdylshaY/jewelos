@@ -285,6 +285,32 @@ pub async fn complete_onboarding(state: State<'_, DbState>) -> Result<(), String
     Ok(())
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RateSettings {
+    pub provider: String,
+    pub api_key: String,
+}
+
+#[tauri::command]
+pub async fn get_rate_settings(state: State<'_, DbState>) -> Result<RateSettings, String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    let provider = get_setting(&conn, "rate_provider")?.unwrap_or_else(|| "tcmb".to_string());
+    let api_key = get_setting(&conn, "rate_api_key")?.unwrap_or_else(|| "".to_string());
+    Ok(RateSettings { provider, api_key })
+}
+
+#[tauri::command]
+pub async fn save_rate_settings(
+    state: State<'_, DbState>,
+    provider: String,
+    api_key: String,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    set_setting(&conn, "rate_provider", &provider)?;
+    set_setting(&conn, "rate_api_key", &api_key)?;
+    Ok(())
+}
+
 #[cfg(debug_assertions)]
 #[tauri::command]
 pub async fn dev_reset_database(
