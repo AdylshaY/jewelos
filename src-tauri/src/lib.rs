@@ -44,6 +44,9 @@ use features::settings::{
     complete_onboarding,
 };
 
+#[cfg(debug_assertions)]
+use features::settings::dev_reset_database;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -96,8 +99,10 @@ pub fn run() {
             verify_admin_pin,
             remove_admin_pin,
             verify_recovery_key,
-            is_onboarding_completed,
-            complete_onboarding
+                        is_onboarding_completed,
+            complete_onboarding,
+            #[cfg(debug_assertions)]
+            dev_reset_database
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

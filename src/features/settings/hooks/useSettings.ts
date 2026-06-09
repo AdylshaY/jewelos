@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 export function useSettings() {
   const [backupLoading, setBackupLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
   const [isPinSet, setIsPinSet] = useState<boolean | null>(null);
   const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
@@ -81,6 +82,22 @@ export function useSettings() {
     }
   };
 
+  const handleResetDatabase = async () => {
+    clearMessages();
+    setResetLoading(true);
+    try {
+      await invoke('dev_reset_database');
+      setSuccessMessage('Veritabanı başarıyla sıfırlandı.\n\nUygulama yeniden yükleniyor...');
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (err: any) {
+      setErrorMessage(err?.toString() || 'Veritabanı sıfırlanırken bir hata oluştu.');
+      setResetLoading(false);
+    }
+  };
+
   const handleSetPin = async (newPin: string, currentPin?: string): Promise<string | null> => {
     clearMessages();
     setPinLoading(true);
@@ -119,6 +136,7 @@ export function useSettings() {
   return {
     backupLoading,
     restoreLoading,
+    resetLoading,
     pinLoading,
     isPinSet,
     isOnboardingCompleted,
@@ -127,6 +145,7 @@ export function useSettings() {
     clearMessages,
     handleBackup,
     handleRestore,
+    handleResetDatabase,
     handleSetPin,
     handleRemovePin,
     handleCompleteOnboarding,

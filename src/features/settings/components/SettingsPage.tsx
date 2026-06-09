@@ -25,6 +25,7 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
   const {
     backupLoading,
     restoreLoading,
+    resetLoading,
     pinLoading,
     isPinSet,
     successMessage,
@@ -32,13 +33,15 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
     clearMessages,
     handleBackup,
     handleRestore,
+    handleResetDatabase,
     handleSetPin,
     handleRemovePin,
   } = useSettings();
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-  const isLoading = backupLoading || restoreLoading;
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const isLoading = backupLoading || restoreLoading || resetLoading;
 
   return (
     <div className="space-y-6">
@@ -211,6 +214,37 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
         </div>
       </div>
 
+      {/* Geliştirici Seçenekleri (Yalnızca Geliştirici Modunda) */}
+      {import.meta.env.DEV && (
+        <div className="p-6 bg-red-950/10 border border-red-900/40 rounded-2xl backdrop-blur-md space-y-6">
+          <div className="flex items-center gap-3 pb-4 border-b border-red-900/20">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <h3 className="text-md font-bold text-red-200">Geliştirici Seçenekleri</h3>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="max-w-xl space-y-1">
+              <h4 className="text-sm font-semibold text-zinc-200">
+                Veritabanını Sıfırla (Reset Database)
+              </h4>
+              <p className="text-xs text-red-400/80 leading-relaxed">
+                Tüm veritabanı tablolarını, envanter, kasa ve ayar kayıtlarını silerek uygulamayı tamamen sıfırlar. Bu işlem geri alınamaz.
+              </p>
+            </div>
+            <div>
+              <button
+                onClick={() => setIsResetConfirmOpen(true)}
+                disabled={isLoading}
+                className="w-full md:w-auto px-4 py-2.5 bg-red-600 hover:bg-red-550 active:bg-red-700 text-white transition-all rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-red-600/10"
+              >
+                <Database className="w-4 h-4" />
+                Veritabanını Sıfırla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirmation Modal */}
       <RestoreConfirmModal
         isOpen={isConfirmOpen}
@@ -232,6 +266,41 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
         }}
         actionTitle="Yedekten veri yükleme"
       />
+
+      {/* Developer Reset Database Confirmation Modal */}
+      {isResetConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-red-500">
+              <AlertTriangle className="w-6 h-6 shrink-0" />
+              <h3 className="text-lg font-bold text-zinc-100">Veritabanını Sıfırla?</h3>
+            </div>
+            
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Bu işlem veritabanındaki tüm kasaları, ürünleri, kategorileri ve sistem ayarlarını (PIN dahil) kalıcı olarak silecektir. 
+              <strong> Bu işlem geri alınamaz!</strong>
+            </p>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setIsResetConfirmOpen(false)}
+                className="flex-1 px-4 py-2.5 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 text-sm font-bold rounded-xl transition-all cursor-pointer"
+              >
+                İptal Et
+              </button>
+              <button
+                onClick={() => {
+                  setIsResetConfirmOpen(false);
+                  handleResetDatabase();
+                }}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-550 active:bg-red-700 text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                Evet, Sıfırla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

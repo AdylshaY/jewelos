@@ -284,3 +284,37 @@ pub async fn complete_onboarding(state: State<'_, DbState>) -> Result<(), String
     set_setting(&conn, "onboarding_completed", "true")?;
     Ok(())
 }
+
+#[cfg(debug_assertions)]
+#[tauri::command]
+pub async fn dev_reset_database(
+    state: State<'_, DbState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let app_data_dir = app_handle.path().app_data_dir()
+        .map_err(|e| format!("Failed to resolve app data directory: {}", e))?;
+    let db_path = app_data_dir.join("jewelos.db");
+    let wal_path = app_data_dir.join("jewelos.db-wal");
+    let shm_path = app_data_dir.join("jewelos.db-shm");
+
+    {
+        let mut conn_guard = state.db.lock().map_err(|e| format!("Database lock error: {}", e))?;
+        
+        let temp_conn = Connection::open_in_memory()
+            .map_err(|e| format!("Failed to create temporary database: {}", e))?;
+        
+        let old_conn = std::mem::replace(&mut *conn_guard, temp_conn);
+        drop(old_conn);
+
+        let _ = fs::remove_file(&db_path);
+        let _ = fs::remove_file(&wal_path);
+        let _ = fs::remove_file(&shm_path);
+
+        let new_conn = crate::db::init_db(app_data_dir)?;
+
+        let temp_conn_dropped = std::mem::replace(&mut *conn_guard, new_conn);
+        drop(temp_conn_dropped);
+    }
+
+    Ok(())
+}
