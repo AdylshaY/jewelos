@@ -20,11 +20,14 @@ Foundation and Inventory Module
 - Setup React
 - Setup Tailwind CSS v4
 - Setup SQLite (rusqlite + rusqlite_migration)
-- Build Daily Vault backend & UI
-- Build Inventory / Stock Management Module backend & UI
+- Build Daily Vault backend & UI (including reconciliation, asset swapping, and vault closure)
+- Build Inventory / Stock Management Module backend & UI (with category lookup and stock tables)
 - Build Sales Reports Module backend & UI
 - Build Database Backup & Restore feature under System Settings (Yedekleme ve Geri Yükleme)
 - Build Light Mode (Açık Tema) support with localStorage persistence and Recharts adaptation
+- Build Secure Admin PIN Management (SHA-256 secure hashing, recovery key generation, verification, and reset)
+- Build Onboarding Wizard for first-time application configuration
+- Build Developer-only Database Reset feature (only enabled in debug assertions)
 
 ## Active Goals
 
@@ -56,3 +59,4 @@ Active schema tables (managed via SQLite migrations):
 - `products` (product definition templates)
 - `stock_items` (physical inventory items with barcodes and weights)
 - `inventory_transactions` (purchase, sale, return, adjustment, transfer transactions)
+- `system_settings` (stores application configuration key-value settings, e.g., admin PIN hash, onboarding completion flag)

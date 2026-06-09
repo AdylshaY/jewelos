@@ -123,3 +123,7 @@ Restore flow:
 * `counterparty` (TEXT)
 * `notes` (TEXT)
 * `created_at` (TEXT)
+
+### `system_settings`
+* `key` (TEXT, PK)
+* `value` (TEXT)
