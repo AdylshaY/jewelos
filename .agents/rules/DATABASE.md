@@ -79,6 +79,7 @@ Restore flow:
 * `fine_gold_gram` (REAL)
 * `description` (TEXT)
 * `reference_id` (TEXT)
+* `category` (TEXT)
 * `created_at` (TEXT)
 
 ### `product_categories`

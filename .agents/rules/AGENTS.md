@@ -62,3 +62,4 @@ Always keep generated code consistent with the architecture.
 
 - After development, only perform code checks (compilation, syntax, type checks, linting, tests).
 - Do NOT open the browser or use browser subagents to perform visual or UI checks (the user will do this manually).
+- After any development or schema modification, the AI collaborator MUST update `.agents/rules/STATE.md` (moving finished goals to Completed) and `.agents/rules/DATABASE.md` (recording table changes under the Schema Snapshot).

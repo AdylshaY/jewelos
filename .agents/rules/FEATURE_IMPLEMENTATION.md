@@ -18,5 +18,6 @@ Then:
 3. Create implementation plan
 4. Implement
 5. Verify consistency (code check only; do NOT perform browser/UI checks)
+6. Update agent state and rule files (update `.agents/rules/STATE.md` and `.agents/rules/DATABASE.md`)
 
 Never jump directly into coding.

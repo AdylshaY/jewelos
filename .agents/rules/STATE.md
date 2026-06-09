@@ -28,6 +28,10 @@ Foundation and Inventory Module
 - Build Secure Admin PIN Management (SHA-256 secure hashing, recovery key generation, verification, and reset)
 - Build Onboarding Wizard for first-time application configuration
 - Build Developer-only Database Reset feature (only enabled in debug assertions)
+- Build Collapsible Sidebar navigation layout with localStorage state persistence
+- Build dynamic Expense/Revenue transaction categorization (Kira, Fatura, Yemek, Maaş vb.)
+- Restructure Sales Reports into "Raporlar & Analiz" with sub-tabs for Sales Analysis and Vault Gider/Gelir Analizi (Pie & Bar charts, detail tables)
+- Fix database query column name mismatches in CRM feature
 
 ## Active Goals
 
@@ -54,7 +58,7 @@ Do not create code for them.
 Active schema tables (managed via SQLite migrations):
 - `daily_vault` (tracks vault status per day)
 - `exchange_rates` (tracks asset currency exchange rates per vault date)
-- `asset_entries` (tracks vault cash/gold balances)
+- `asset_entries` (tracks vault cash/gold balances and categories)
 - `product_categories` (product category lookup)
 - `products` (product definition templates)
 - `stock_items` (physical inventory items with barcodes and weights)
