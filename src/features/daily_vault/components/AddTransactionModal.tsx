@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
 import { NewAssetEntry } from '../types';
 
+const INFLOW_CATEGORIES = [
+  { value: 'satis', label: 'Satış Geliri' },
+  { value: 'ortak', label: 'Ortak Sermaye Girişi' },
+  { value: 'diger_gelir', label: 'Diğer Gelir' }
+];
+
+const OUTFLOW_CATEGORIES = [
+  { value: 'fatura', label: 'Fatura Ödemesi' },
+  { value: 'yemek', label: 'Yemek Gideri' },
+  { value: 'kira', label: 'Kira Ödemesi' },
+  { value: 'maas', label: 'Personel Maaşı' },
+  { value: 'avans', label: 'Personel Avansı' },
+  { value: 'toptan', label: 'Toptancı Ödemesi' },
+  { value: 'diger', label: 'Diğer Gider' }
+];
+
 interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,6 +32,7 @@ export default function AddTransactionModal({
   getAssetLabel,
 }: AddTransactionModalProps) {
   const [direction, setDirection] = useState<'in' | 'out'>('in');
+  const [category, setCategory] = useState<string>('satis');
   const [assetType, setAssetType] = useState<'TRY' | 'USD' | 'EUR' | 'FINE_GOLD' | 'PRODUCT'>('TRY');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -23,6 +40,11 @@ export default function AddTransactionModal({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleDirectionChange = (dir: 'in' | 'out') => {
+    setDirection(dir);
+    setCategory(dir === 'in' ? 'satis' : 'fatura');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,12 +64,14 @@ export default function AddTransactionModal({
         asset_type: assetType,
         amount: amt,
         description: description.trim() || null,
+        category,
       });
       // Reset state on success
       setAmount('');
       setDescription('');
       setDirection('in');
       setAssetType('TRY');
+      setCategory('satis');
       onClose();
     } catch (err: any) {
       setValidationError(err.toString() || 'İşlem kaydedilirken bir hata oluştu.');
@@ -85,7 +109,7 @@ export default function AddTransactionModal({
           <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-950 border border-zinc-850 rounded-xl">
             <button
               type="button"
-              onClick={() => setDirection('in')}
+              onClick={() => handleDirectionChange('in')}
               className={`py-2 text-sm font-semibold rounded-lg transition-all ${
                 direction === 'in'
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm'
@@ -96,7 +120,7 @@ export default function AddTransactionModal({
             </button>
             <button
               type="button"
-              onClick={() => setDirection('out')}
+              onClick={() => handleDirectionChange('out')}
               className={`py-2 text-sm font-semibold rounded-lg transition-all ${
                 direction === 'out'
                   ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-sm'
@@ -120,6 +144,28 @@ export default function AddTransactionModal({
               <option value="EUR">{getAssetLabel('EUR')}</option>
               <option value="FINE_GOLD">{getAssetLabel('FINE_GOLD')}</option>
               <option value="PRODUCT">{getAssetLabel('PRODUCT')}</option>
+            </select>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-xs text-zinc-450 mb-1.5">Kategori</label>
+            <select
+              value={category}
+              onChange={(e: any) => setCategory(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50"
+            >
+              {direction === 'in'
+                ? INFLOW_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))
+                : OUTFLOW_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
             </select>
           </div>
 

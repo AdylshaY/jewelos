@@ -80,7 +80,7 @@ fn get_latest_rates(conn: &Connection) -> Result<(f64, f64, f64), String> {
     };
 
     let mut stmt = conn
-        .prepare("SELECT currency, rate_buy FROM exchange_rates WHERE vault_date = ?")
+        .prepare("SELECT currency, buy_rate FROM exchange_rates WHERE rate_date = ?")
         .map_err(|e| format!("Prepare rates error: {}", e))?;
     
     let rows = stmt
@@ -394,7 +394,7 @@ pub async fn add_customer_transaction(
 
     let (usd_buy, eur_buy, gold_buy) = {
         let mut stmt = conn
-            .prepare("SELECT currency, rate_buy FROM exchange_rates WHERE vault_date = ?")
+            .prepare("SELECT currency, buy_rate FROM exchange_rates WHERE rate_date = ?")
             .map_err(|e| format!("Prepare rates error: {}", e))?;
         
         let rows = stmt

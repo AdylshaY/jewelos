@@ -37,6 +37,7 @@ export interface NewAssetEntry {
   direction: 'in' | 'out';
   amount: number;
   description: string | null;
+  category: string | null;
 }
 
 export interface AssetEntrySummary {
@@ -46,6 +47,7 @@ export interface AssetEntrySummary {
   amount: number;
   fine_gold_gram: number;
   description: string | null;
+  category: string | null;
   created_at: string;
 }
 
@@ -65,4 +67,38 @@ export interface DailySummary {
   balances: AssetBalance[];
   transactions: AssetEntrySummary[];
   total_fine_gold: number;
+}
+
+export interface MonthlyVaultSummary {
+  month: string;
+  total_in: number;
+  total_out: number;
+}
+
+export interface CategoryVaultSummary {
+  category: string;
+  direction: 'in' | 'out';
+  total_amount: number;
+  fine_gold_gram: number;
+  count: number;
+}
+
+export interface VaultReportEntry {
+  id: number;
+  vault_date: string;
+  asset_type: 'TRY' | 'USD' | 'EUR' | 'FINE_GOLD' | 'PRODUCT';
+  direction: 'in' | 'out';
+  amount: number;
+  fine_gold_gram: number;
+  description: string | null;
+  category: string | null;
+  created_at: string;
+}
+
+export interface VaultReport {
+  entries: VaultReportEntry[];
+  monthly: MonthlyVaultSummary[];
+  by_category: CategoryVaultSummary[];
+  total_in_gold: number;
+  total_out_gold: number;
 }

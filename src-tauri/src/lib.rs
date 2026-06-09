@@ -14,6 +14,7 @@ use features::daily_vault::{
     get_daily_summary,
     swap_assets,
     fetch_live_rates,
+    get_vault_report,
 };
 use features::inventory::{
     get_products,
@@ -90,6 +91,7 @@ pub fn run() {
             close_daily_vault,
             get_daily_summary,
             swap_assets,
+            get_vault_report,
             get_products,
             add_product,
             update_product,

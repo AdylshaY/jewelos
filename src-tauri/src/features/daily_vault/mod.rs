@@ -49,6 +49,7 @@ pub struct NewAssetEntry {
     pub direction: String,  // "in", "out"
     pub amount: f64,
     pub description: Option<String>,
+    pub category: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,6 +60,7 @@ pub struct AssetEntrySummary {
     pub amount: f64,
     pub fine_gold_gram: f64,
     pub description: Option<String>,
+    pub category: Option<String>,
     pub created_at: String,
 }
 
@@ -438,15 +440,16 @@ pub async fn add_asset_transaction(
 
     // 4. Insert transaction
     conn.execute(
-        "INSERT INTO asset_entries (vault_date, asset_type, direction, amount, fine_gold_gram, description) 
-         VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO asset_entries (vault_date, asset_type, direction, amount, fine_gold_gram, description, category) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)",
         params![
             entry.vault_date,
             entry.asset_type,
             entry.direction,
             entry.amount,
             fine_gold,
-            entry.description
+            entry.description,
+            entry.category
         ],
     )
     .map_err(|e| format!("Failed to insert asset transaction: {}", e))?;
@@ -589,7 +592,7 @@ pub async fn get_daily_summary(
     // 3. Query all transactions for the day
     let mut stmt = conn
         .prepare(
-            "SELECT id, asset_type, direction, amount, fine_gold_gram, description, created_at 
+            "SELECT id, asset_type, direction, amount, fine_gold_gram, description, category, created_at 
              FROM asset_entries 
              WHERE vault_date = ?
              ORDER BY created_at ASC"
@@ -605,7 +608,8 @@ pub async fn get_daily_summary(
                 amount: row.get(3)?,
                 fine_gold_gram: row.get(4)?,
                 description: row.get(5)?,
-                created_at: row.get(6)?,
+                category: row.get(6)?,
+                created_at: row.get(7)?,
             })
         })
         .map_err(|e| format!("Failed to query day's transactions: {}", e))?;
@@ -721,5 +725,214 @@ pub async fn get_daily_summary(
         balances,
         transactions,
         total_fine_gold,
+    })
+}
+
+// ==========================================
+// Vault Reporting Structs & Commands
+// ==========================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MonthlyVaultSummary {
+    pub month: String,
+    pub total_in: f64,
+    pub total_out: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CategoryVaultSummary {
+    pub category: String,
+    pub direction: String,
+    pub total_amount: f64,
+    pub fine_gold_gram: f64,
+    pub count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VaultReportEntry {
+    pub id: i64,
+    pub vault_date: String,
+    pub asset_type: String,
+    pub direction: String,
+    pub amount: f64,
+    pub fine_gold_gram: f64,
+    pub description: Option<String>,
+    pub category: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VaultReport {
+    pub entries: Vec<VaultReportEntry>,
+    pub monthly: Vec<MonthlyVaultSummary>,
+    pub by_category: Vec<CategoryVaultSummary>,
+    pub total_in_gold: f64,
+    pub total_out_gold: f64,
+}
+
+#[tauri::command]
+pub async fn get_vault_report(
+    state: State<'_, DbState>,
+    date_from: Option<String>,
+    date_to: Option<String>,
+) -> Result<VaultReport, String> {
+    let conn = state.db.lock().map_err(|e| format!("Lock error: {}", e))?;
+
+    // Build WHERE clause for date filtering
+    let mut where_clauses = Vec::new();
+    let mut param_values: Vec<String> = Vec::new();
+
+    if let Some(ref from) = date_from {
+        if !from.trim().is_empty() {
+            where_clauses.push(format!("vault_date >= ?{}", param_values.len() + 1));
+            param_values.push(from.clone());
+        }
+    }
+    if let Some(ref to) = date_to {
+        if !to.trim().is_empty() {
+            where_clauses.push(format!("vault_date <= ?{}", param_values.len() + 1));
+            param_values.push(to.clone());
+        }
+    }
+
+    let where_sql = if where_clauses.is_empty() {
+        "1=1".to_string()
+    } else {
+        where_clauses.join(" AND ")
+    };
+
+    // 1. Fetch vault entries
+    let entries_sql = format!(
+        "SELECT id, vault_date, asset_type, direction, amount, fine_gold_gram, description, category, created_at
+         FROM asset_entries
+         WHERE {}
+         ORDER BY vault_date DESC, created_at DESC",
+        where_sql
+    );
+
+    let mut entries = Vec::new();
+    {
+        let mut stmt = conn
+            .prepare(&entries_sql)
+            .map_err(|e| format!("Failed to prepare vault entries query: {}", e))?;
+
+        let params_refs: Vec<&dyn rusqlite::types::ToSql> = param_values
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+
+        let rows = stmt
+            .query_map(rusqlite::params_from_iter(params_refs), |row| {
+                Ok(VaultReportEntry {
+                    id: row.get(0)?,
+                    vault_date: row.get(1)?,
+                    asset_type: row.get(2)?,
+                    direction: row.get(3)?,
+                    amount: row.get(4)?,
+                    fine_gold_gram: row.get(5)?,
+                    description: row.get(6)?,
+                    category: row.get(7)?,
+                    created_at: row.get(8)?,
+                })
+            })
+            .map_err(|e| format!("Failed to query vault entries: {}", e))?;
+
+        for row in rows {
+            entries.push(row.map_err(|e| format!("Failed to read vault entry: {}", e))?);
+        }
+    }
+
+    // 2. Monthly summary (group by month)
+    let monthly_sql = format!(
+        "SELECT 
+            strftime('%Y-%m', vault_date) as month,
+            SUM(CASE WHEN direction = 'in' THEN fine_gold_gram ELSE 0.0 END) as total_in,
+            SUM(CASE WHEN direction = 'out' THEN fine_gold_gram ELSE 0.0 END) as total_out
+         FROM asset_entries
+         WHERE {}
+         GROUP BY month
+         ORDER BY month ASC",
+        where_sql
+    );
+
+    let mut monthly = Vec::new();
+    {
+        let mut stmt = conn
+            .prepare(&monthly_sql)
+            .map_err(|e| format!("Failed to prepare monthly summary query: {}", e))?;
+
+        let params_refs: Vec<&dyn rusqlite::types::ToSql> = param_values
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+
+        let rows = stmt
+            .query_map(rusqlite::params_from_iter(params_refs), |row| {
+                Ok(MonthlyVaultSummary {
+                    month: row.get(0)?,
+                    total_in: row.get(1).unwrap_or(0.0),
+                    total_out: row.get(2).unwrap_or(0.0),
+                })
+            })
+            .map_err(|e| format!("Failed to query monthly summary: {}", e))?;
+
+        for row in rows {
+            monthly.push(row.map_err(|e| format!("Failed to read monthly summary: {}", e))?);
+        }
+    }
+
+    // 3. Category summary (group by category, direction)
+    let category_sql = format!(
+        "SELECT 
+            COALESCE(category, 'diger') as cat,
+            direction,
+            SUM(amount),
+            SUM(fine_gold_gram),
+            COUNT(*)
+         FROM asset_entries
+         WHERE {}
+         GROUP BY cat, direction
+         ORDER BY SUM(fine_gold_gram) DESC",
+        where_sql
+    );
+
+    let mut by_category = Vec::new();
+    {
+        let mut stmt = conn
+            .prepare(&category_sql)
+            .map_err(|e| format!("Failed to prepare category summary query: {}", e))?;
+
+        let params_refs: Vec<&dyn rusqlite::types::ToSql> = param_values
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+
+        let rows = stmt
+            .query_map(rusqlite::params_from_iter(params_refs), |row| {
+                Ok(CategoryVaultSummary {
+                    category: row.get(0)?,
+                    direction: row.get(1)?,
+                    total_amount: row.get(2).unwrap_or(0.0),
+                    fine_gold_gram: row.get(3).unwrap_or(0.0),
+                    count: row.get(4)?,
+                })
+            })
+            .map_err(|e| format!("Failed to query category summary: {}", e))?;
+
+        for row in rows {
+            by_category.push(row.map_err(|e| format!("Failed to read category summary: {}", e))?);
+        }
+    }
+
+    // 4. Totals
+    let total_in_gold = entries.iter().filter(|e| e.direction == "in").map(|e| e.fine_gold_gram).sum();
+    let total_out_gold = entries.iter().filter(|e| e.direction == "out").map(|e| e.fine_gold_gram).sum();
+
+    Ok(VaultReport {
+        entries,
+        monthly,
+        by_category,
+        total_in_gold,
+        total_out_gold,
     })
 }

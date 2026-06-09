@@ -142,10 +142,10 @@ export default function App() {
                   ? 'bg-zinc-800/60 text-zinc-100 border-zinc-700/50 shadow-inner shadow-black/10'
                   : 'border-transparent text-zinc-450 hover:text-zinc-350 hover:bg-zinc-900/40'
               } ${isCollapsed ? 'w-12 h-12 justify-center mx-auto p-0' : 'w-full gap-3 px-4 py-3 text-sm font-semibold'}`}
-              title={isCollapsed ? "Satış Raporları" : undefined}
+              title={isCollapsed ? "Raporlar & Analiz" : undefined}
             >
               <BarChart3 className={`w-4 h-4 shrink-0 ${activeTab === 'sales' ? 'text-amber-500' : 'text-zinc-500'}`} />
-              {!isCollapsed && <span className="truncate">Satış Raporları</span>}
+              {!isCollapsed && <span className="truncate">Raporlar & Analiz</span>}
             </button>
 
             <button

@@ -32,3 +32,37 @@ export interface SalesReport {
   total_fine_gold: number;
   total_price_try: number;
 }
+
+export interface MonthlyVaultSummary {
+  month: string;
+  total_in: number;
+  total_out: number;
+}
+
+export interface CategoryVaultSummary {
+  category: string;
+  direction: 'in' | 'out';
+  total_amount: number;
+  fine_gold_gram: number;
+  count: number;
+}
+
+export interface VaultReportEntry {
+  id: number;
+  vault_date: string;
+  asset_type: 'TRY' | 'USD' | 'EUR' | 'FINE_GOLD' | 'PRODUCT';
+  direction: 'in' | 'out';
+  amount: number;
+  fine_gold_gram: number;
+  description: string | null;
+  category: string | null;
+  created_at: string;
+}
+
+export interface VaultReport {
+  entries: VaultReportEntry[];
+  monthly: MonthlyVaultSummary[];
+  by_category: CategoryVaultSummary[];
+  total_in_gold: number;
+  total_out_gold: number;
+}
