@@ -13,7 +13,7 @@ pub struct DbState {
 
 /// All migration steps, embedded at compile time.
 /// Each M::up() corresponds to a migration SQL file.
-const MIGRATIONS: [M<'static>; 7] = [
+const MIGRATIONS: [M<'static>; 8] = [
     M::up(include_str!("../../migrations/V001__create_daily_vault.sql")),
     M::up(include_str!("../../migrations/V002__create_exchange_rates.sql")),
     M::up(include_str!("../../migrations/V003__create_asset_entries.sql")),
@@ -21,6 +21,7 @@ const MIGRATIONS: [M<'static>; 7] = [
     M::up(include_str!("../../migrations/V005__create_products.sql")),
     M::up(include_str!("../../migrations/V006__create_inventory_transactions.sql")),
     M::up(include_str!("../../migrations/V007__restructure_inventory.sql")),
+    M::up(include_str!("../../migrations/V008__create_system_settings.sql")),
 ];
 
 /// Initialize the SQLite database.

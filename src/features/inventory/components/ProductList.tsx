@@ -7,6 +7,7 @@ import ProductCatalogModal from './ProductCatalogModal';
 import EditStockModal from './EditStockModal';
 import ReturnStockModal from './ReturnStockModal';
 import StockTable from './StockTable';
+import PinVerificationModal from '../../../core/components/PinVerificationModal';
 import { StockItem } from '../types';
 import {
   Plus,
@@ -53,8 +54,13 @@ export default function ProductList({ activeDate }: ProductListProps) {
   const [selectedForEdit, setSelectedForEdit] = useState<StockItem | null>(null);
   const [selectedForReturn, setSelectedForReturn] = useState<StockItem | null>(null);
   const [selectedForDelete, setSelectedForDelete] = useState<StockItem | null>(null);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
+    setIsPinModalOpen(true);
+  };
+
+  const handlePinSuccessForDelete = async () => {
     if (!selectedForDelete) return;
     try {
       await deleteStockItem(selectedForDelete.id, activeDate);
@@ -356,6 +362,13 @@ export default function ProductList({ activeDate }: ProductListProps) {
         categories={categories}
         translateCategory={translateCategory}
         getPurityLabel={getPurityLabel}
+      />
+
+      <PinVerificationModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
+        onSuccess={handlePinSuccessForDelete}
+        actionTitle="Stok Kartı Silme"
       />
     </div>
   );

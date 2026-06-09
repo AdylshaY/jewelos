@@ -35,6 +35,10 @@ use features::sales_report::{
 use features::settings::{
     backup_database,
     restore_database,
+    is_admin_pin_set,
+    set_admin_pin,
+    verify_admin_pin,
+    remove_admin_pin,
 };
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -83,7 +87,11 @@ pub fn run() {
             update_stock_item,
             delete_stock_item,
             backup_database,
-            restore_database
+            restore_database,
+            is_admin_pin_set,
+            set_admin_pin,
+            verify_admin_pin,
+            remove_admin_pin
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

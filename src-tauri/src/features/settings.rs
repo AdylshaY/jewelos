@@ -97,3 +97,114 @@ pub async fn restore_database(
 
     Ok(src_path.to_string_lossy().to_string())
 }
+
+// --- Admin PIN Management & Settings Helpers ---
+
+use sha2::{Sha256, Digest};
+
+fn hash_pin(pin: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    let result = hasher.finalize();
+    format!("{:x}", result)
+}
+
+fn get_setting(conn: &Connection, key: &str) -> Result<Option<String>, String> {
+    let mut stmt = conn
+        .prepare("SELECT value FROM system_settings WHERE key = ?1")
+        .map_err(|e| format!("Ayarlar sorgulanamadı: {}", e))?;
+    let mut rows = stmt
+        .query(rusqlite::params![key])
+        .map_err(|e| format!("Ayar sorgu hatası: {}", e))?;
+    
+    if let Some(row) = rows.next().map_err(|e| format!("Ayar satırı alınamadı: {}", e))? {
+        let value: String = row.get(0).map_err(|e| format!("Ayar değeri okunamadı: {}", e))?;
+        Ok(Some(value))
+    } else {
+        Ok(None)
+    }
+}
+
+fn set_setting(conn: &Connection, key: &str, value: &str) -> Result<(), String> {
+    conn.execute(
+        "INSERT OR REPLACE INTO system_settings (key, value) VALUES (?1, ?2)",
+        rusqlite::params![key, value],
+    )
+    .map_err(|e| format!("Ayar kaydedilemedi: {}", e))?;
+    Ok(())
+}
+
+fn delete_setting(conn: &Connection, key: &str) -> Result<(), String> {
+    conn.execute(
+        "DELETE FROM system_settings WHERE key = ?1",
+        rusqlite::params![key],
+    )
+    .map_err(|e| format!("Ayar silinemedi: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn is_admin_pin_set(state: State<'_, DbState>) -> Result<bool, String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    let pin_opt = get_setting(&conn, "admin_pin")?;
+    Ok(pin_opt.is_some())
+}
+
+#[tauri::command]
+pub async fn set_admin_pin(
+    state: State<'_, DbState>,
+    current_pin: Option<String>,
+    new_pin: String,
+) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    
+    let existing_pin_opt = get_setting(&conn, "admin_pin")?;
+    if let Some(existing_hash) = existing_pin_opt {
+        let current = current_pin.ok_or_else(|| "Mevcut PIN kodu girilmelidir.".to_string())?;
+        let current_hash = hash_pin(&current);
+        if current_hash != existing_hash {
+            return Err("Mevcut yönetici PIN kodu hatalı.".to_string());
+        }
+    }
+    
+    if new_pin.trim().len() < 4 {
+        return Err("Yeni PIN kodu en az 4 karakter olmalıdır.".to_string());
+    }
+    let new_hash = hash_pin(&new_pin);
+    set_setting(&conn, "admin_pin", &new_hash)?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn verify_admin_pin(state: State<'_, DbState>, pin: String) -> Result<bool, String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    let existing_pin_opt = get_setting(&conn, "admin_pin")?;
+    
+    match existing_pin_opt {
+        Some(existing_hash) => {
+            let input_hash = hash_pin(&pin);
+            Ok(input_hash == existing_hash)
+        }
+        None => {
+            Ok(true)
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn remove_admin_pin(state: State<'_, DbState>, current_pin: String) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    let existing_pin_opt = get_setting(&conn, "admin_pin")?;
+    
+    if let Some(existing_hash) = existing_pin_opt {
+        let current_hash = hash_pin(&current_pin);
+        if current_hash != existing_hash {
+            return Err("Mevcut yönetici PIN kodu hatalı.".to_string());
+        }
+        delete_setting(&conn, "admin_pin")?;
+        Ok(())
+    } else {
+        Err("Sistemde zaten kayıtlı bir PIN kodu bulunmamaktadır.".to_string())
+    }
+}

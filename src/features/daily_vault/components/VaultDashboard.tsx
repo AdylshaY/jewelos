@@ -4,6 +4,7 @@ import OpenVaultModal from './OpenVaultModal';
 import AddTransactionModal from './AddTransactionModal';
 import CloseVaultModal from './CloseVaultModal';
 import SwapAssetsModal from './SwapAssetsModal';
+import PinVerificationModal from '../../../core/components/PinVerificationModal';
 import {
   Plus,
   Lock,
@@ -49,6 +50,7 @@ export default function VaultDashboard({ selectedDate: propSelectedDate, setSele
   const [isAddTxModalOpen, setIsAddTxModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
   const handleCloseVault = async (notes: string) => {
     await closeVault(selectedDate, notes);
@@ -320,7 +322,7 @@ export default function VaultDashboard({ selectedDate: propSelectedDate, setSele
                 {vaultStatus.status === 'open' && (
                   <div className='flex justify-end mt-4'>
                     <button
-                      onClick={() => setIsCloseModalOpen(true)}
+                      onClick={() => setIsPinModalOpen(true)}
                       className='px-4 py-1.5 bg-rose-650/10 hover:bg-rose-650/20 active:bg-rose-650/30 text-rose-400 border border-rose-650/20 hover:border-rose-650/30 transition-all rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer'
                     >
                       <Lock className='w-3.5 h-3.5' /> Kasayı Kapat
@@ -538,6 +540,16 @@ export default function VaultDashboard({ selectedDate: propSelectedDate, setSele
         onSubmit={swapAssets}
         rates={summary?.rates ?? null}
         getAssetLabel={getAssetLabel}
+      />
+
+      <PinVerificationModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
+        onSuccess={() => {
+          setIsPinModalOpen(false);
+          setIsCloseModalOpen(true);
+        }}
+        actionTitle="Kasa Kapatma"
       />
     </div>
   );

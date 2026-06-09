@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import RestoreConfirmModal from './RestoreConfirmModal';
+import PinSettingsCard from './PinSettingsCard';
+import PinVerificationModal from '../../../core/components/PinVerificationModal';
 import {
   Database,
   Download,
@@ -23,14 +25,19 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
   const {
     backupLoading,
     restoreLoading,
+    pinLoading,
+    isPinSet,
     successMessage,
     errorMessage,
     clearMessages,
     handleBackup,
     handleRestore,
+    handleSetPin,
+    handleRemovePin,
   } = useSettings();
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const isLoading = backupLoading || restoreLoading;
 
   return (
@@ -117,7 +124,7 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
 
           <div className="border-t border-zinc-850/60"></div>
 
-          {/* Restore Section */}
+           {/* Restore Section */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="max-w-xl space-y-1">
               <h4 className="text-sm font-semibold text-zinc-200">
@@ -135,7 +142,13 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
             </div>
             <div>
               <button
-                onClick={() => setIsConfirmOpen(true)}
+                onClick={() => {
+                  if (isPinSet) {
+                    setIsPinModalOpen(true);
+                  } else {
+                    setIsConfirmOpen(true);
+                  }
+                }}
                 disabled={isLoading}
                 className="w-full md:w-auto px-4 py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white transition-all rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-amber-600/10"
               >
@@ -146,6 +159,14 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Admin PIN Settings Card */}
+      <PinSettingsCard
+        isPinSet={isPinSet}
+        pinLoading={pinLoading}
+        onSetPin={handleSetPin}
+        onRemovePin={handleRemovePin}
+      />
       
       {/* Appearance Settings Card */}
       <div className="p-6 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl backdrop-blur-md space-y-6">
@@ -199,6 +220,17 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
           handleRestore();
         }}
         loading={restoreLoading}
+      />
+
+      {/* Admin PIN Verification Modal for Restore */}
+      <PinVerificationModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
+        onSuccess={() => {
+          setIsPinModalOpen(false);
+          setIsConfirmOpen(true);
+        }}
+        actionTitle="Yedekten veri yükleme"
       />
     </div>
   );
