@@ -39,6 +39,9 @@ use features::settings::{
     set_admin_pin,
     verify_admin_pin,
     remove_admin_pin,
+    verify_recovery_key,
+    is_onboarding_completed,
+    complete_onboarding,
 };
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -91,7 +94,10 @@ pub fn run() {
             is_admin_pin_set,
             set_admin_pin,
             verify_admin_pin,
-            remove_admin_pin
+            remove_admin_pin,
+            verify_recovery_key,
+            is_onboarding_completed,
+            complete_onboarding
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

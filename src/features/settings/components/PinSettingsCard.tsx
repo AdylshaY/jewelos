@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { KeyRound, ShieldAlert, Check } from 'lucide-react';
+import { KeyRound, ShieldAlert, Check, Copy, CheckCircle } from 'lucide-react';
 
 interface PinSettingsCardProps {
   isPinSet: boolean | null;
   pinLoading: boolean;
-  onSetPin: (newPin: string, currentPin?: string) => Promise<void>;
+  onSetPin: (newPin: string, currentPin?: string) => Promise<string | null>;
   onRemovePin: (currentPin: string) => Promise<void>;
 }
 
@@ -19,6 +19,11 @@ export default function PinSettingsCard({
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
+  // Recovery key states
+  const [generatedRecoveryKey, setGeneratedRecoveryKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [hasSavedKey, setHasSavedKey] = useState(false);
 
   const resetForm = () => {
     setMode('idle');
@@ -26,6 +31,20 @@ export default function PinSettingsCard({
     setNewPin('');
     setConfirmPin('');
     setError(null);
+    setGeneratedRecoveryKey(null);
+    setCopied(false);
+    setHasSavedKey(false);
+  };
+
+  const handleCopy = async () => {
+    if (!generatedRecoveryKey) return;
+    try {
+      await navigator.clipboard.writeText(generatedRecoveryKey);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -42,8 +61,13 @@ export default function PinSettingsCard({
         return;
       }
       try {
-        await onSetPin(newPin, mode === 'change' ? currentPin : undefined);
-        resetForm();
+        const recoveryKey = await onSetPin(newPin, mode === 'change' ? currentPin : undefined);
+        if (recoveryKey) {
+          // Show recovery key screen
+          setGeneratedRecoveryKey(recoveryKey);
+        } else {
+          resetForm();
+        }
       } catch (err: any) {
         setError(err.toString());
       }
@@ -67,7 +91,57 @@ export default function PinSettingsCard({
         <h3 className="text-md font-bold text-zinc-150">Yönetici PIN Kodu Koruması</h3>
       </div>
 
-      {mode === 'idle' ? (
+      {generatedRecoveryKey ? (
+        // Recovery Key Presentation screen
+        <div className="space-y-5 max-w-lg animate-in fade-in duration-200">
+          <div className="p-3 bg-amber-950/20 border border-amber-900/40 text-amber-300 text-xs rounded-xl flex items-start gap-2.5">
+            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+            <div className="space-y-1">
+              <span className="font-semibold block text-zinc-100">Önemli Güvenlik Uyarısı</span>
+              <span>Bu şifre kurtarma anahtarı size <b>yalnızca bir kez</b> gösterilmektedir. Yönetici PIN kodunu unuttuğunuzda verilerinizi kurtarmanın tek yolu bu anahtardır.</span>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-zinc-400">Şifre Kurtarma Anahtarı</label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-850 rounded-xl text-center text-lg font-mono font-bold tracking-wider text-amber-500">
+                {generatedRecoveryKey}
+              </div>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="p-3.5 bg-zinc-950 border border-zinc-850 hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                title="Kopyala"
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <label className="flex items-start gap-3 p-3 bg-zinc-950/40 border border-zinc-850/40 rounded-xl cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={hasSavedKey}
+              onChange={(e) => setHasSavedKey(e.target.checked)}
+              className="mt-0.5 accent-amber-600 rounded border-zinc-800"
+            />
+            <span className="text-xs text-zinc-350 leading-relaxed font-medium">
+              Kurtarma anahtarımı güvenli bir yere kopyaladığımı veya kaydettiğimi onaylıyorum.
+            </span>
+          </label>
+
+          <button
+            type="button"
+            disabled={!hasSavedKey}
+            onClick={resetForm}
+            className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-amber-600/10"
+          >
+            <CheckCircle className="w-4 h-4" />
+            Kurulumu Tamamla
+          </button>
+        </div>
+      ) : mode === 'idle' ? (
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="max-w-xl space-y-1">
             <h4 className="text-sm font-semibold text-zinc-200">

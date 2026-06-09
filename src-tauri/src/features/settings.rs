@@ -155,16 +155,43 @@ pub async fn set_admin_pin(
     state: State<'_, DbState>,
     current_pin: Option<String>,
     new_pin: String,
-) -> Result<(), String> {
+) -> Result<Option<String>, String> {
     let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
     
     let existing_pin_opt = get_setting(&conn, "admin_pin")?;
+    let mut recovery_key_plain = None;
+
     if let Some(existing_hash) = existing_pin_opt {
         let current = current_pin.ok_or_else(|| "Mevcut PIN kodu girilmelidir.".to_string())?;
         let current_hash = hash_pin(&current);
         if current_hash != existing_hash {
             return Err("Mevcut yönetici PIN kodu hatalı.".to_string());
         }
+    } else {
+        // First time setting the PIN: generate recovery key
+        use rand::Rng;
+        let charset: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let mut rng = rand::thread_rng();
+        
+        let key_chars: String = (0..16)
+            .map(|_| {
+                let idx = rng.gen_range(0..charset.len());
+                charset[idx] as char
+            })
+            .collect();
+
+        // Format as XXXX-XXXX-XXXX-XXXX
+        let formatted_key = format!(
+            "{}-{}-{}-{}",
+            &key_chars[0..4],
+            &key_chars[4..8],
+            &key_chars[8..12],
+            &key_chars[12..16]
+        );
+
+        let key_hash = hash_pin(&formatted_key);
+        set_setting(&conn, "recovery_key_hash", &key_hash)?;
+        recovery_key_plain = Some(formatted_key);
     }
     
     if new_pin.trim().len() < 4 {
@@ -173,7 +200,7 @@ pub async fn set_admin_pin(
     let new_hash = hash_pin(&new_pin);
     set_setting(&conn, "admin_pin", &new_hash)?;
     
-    Ok(())
+    Ok(recovery_key_plain)
 }
 
 #[tauri::command]
@@ -203,8 +230,57 @@ pub async fn remove_admin_pin(state: State<'_, DbState>, current_pin: String) ->
             return Err("Mevcut yönetici PIN kodu hatalı.".to_string());
         }
         delete_setting(&conn, "admin_pin")?;
+        delete_setting(&conn, "recovery_key_hash")?;
         Ok(())
     } else {
         Err("Sistemde zaten kayıtlı bir PIN kodu bulunmamaktadır.".to_string())
     }
+}
+
+#[tauri::command]
+pub async fn verify_recovery_key(state: State<'_, DbState>, key: String) -> Result<bool, String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    let stored_hash_opt = get_setting(&conn, "recovery_key_hash")?;
+    
+    match stored_hash_opt {
+        Some(stored_hash) => {
+            let normalized = key.replace("-", "").replace(" ", "").to_uppercase();
+            if normalized.len() != 16 {
+                return Ok(false);
+            }
+            let formatted = format!(
+                "{}-{}-{}-{}",
+                &normalized[0..4],
+                &normalized[4..8],
+                &normalized[8..12],
+                &normalized[12..16]
+            );
+            let input_hash = hash_pin(&formatted);
+            
+            if input_hash == stored_hash {
+                delete_setting(&conn, "admin_pin")?;
+                delete_setting(&conn, "recovery_key_hash")?;
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        }
+        None => {
+            Ok(false)
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn is_onboarding_completed(state: State<'_, DbState>) -> Result<bool, String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    let status_opt = get_setting(&conn, "onboarding_completed")?;
+    Ok(status_opt.map(|v| v == "true").unwrap_or(false))
+}
+
+#[tauri::command]
+pub async fn complete_onboarding(state: State<'_, DbState>) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| format!("Veritabanı kilit hatası: {}", e))?;
+    set_setting(&conn, "onboarding_completed", "true")?;
+    Ok(())
 }

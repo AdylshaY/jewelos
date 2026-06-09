@@ -26,4 +26,5 @@ rusqlite = { version = "0.34", features = ["bundled", "backup"] }
 rusqlite_migration = "2"
 rfd = "0.15"
 sha2 = "0.10"
+rand = "0.8"
 

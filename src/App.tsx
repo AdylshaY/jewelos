@@ -3,6 +3,8 @@ import VaultDashboard from './features/daily_vault/components/VaultDashboard';
 import ProductList from './features/inventory/components/ProductList';
 import SalesReportPage from './features/sales_report/components/SalesReportPage';
 import SettingsPage from './features/settings/components/SettingsPage';
+import OnboardingWizard from './core/components/OnboardingWizard';
+import { useSettings } from './features/settings/hooks/useSettings';
 import { getLocalDateString } from './features/daily_vault/hooks/useDailyVault';
 import { 
   Briefcase, 
@@ -16,6 +18,12 @@ import {
 export default function App() {
   const [activeTab, setActiveTab] = useState<'vault' | 'inventory' | 'sales' | 'settings'>('vault');
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateString());
+
+  const {
+    isOnboardingCompleted,
+    handleCompleteOnboarding,
+    handleSetPin,
+  } = useSettings();
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme');
@@ -31,7 +39,31 @@ export default function App() {
       root.classList.remove('dark');
     }
     localStorage.setItem('theme', theme);
+
+    // Force WebView layout reflow/repaint to avoid repaint lag on theme toggle
+    const body = document.body;
+    if (body) {
+      const originalDisplay = body.style.display;
+      body.style.display = 'none';
+      body.offsetHeight; // Forces a synchronous reflow of the rendering tree
+      body.style.display = originalDisplay;
+    }
   }, [theme]);
+
+  if (isOnboardingCompleted === null) {
+    return <div className="w-screen h-screen bg-zinc-950 flex items-center justify-center text-zinc-400 font-medium">Sistem yükleniyor...</div>;
+  }
+
+  if (isOnboardingCompleted === false) {
+    return (
+      <OnboardingWizard
+        theme={theme}
+        setTheme={setTheme}
+        onComplete={handleCompleteOnboarding}
+        handleSetPin={handleSetPin}
+      />
+    );
+  }
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans antialiased overflow-hidden">

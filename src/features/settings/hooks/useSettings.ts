@@ -6,6 +6,7 @@ export function useSettings() {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
   const [isPinSet, setIsPinSet] = useState<boolean | null>(null);
+  const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -23,8 +24,27 @@ export function useSettings() {
     }
   };
 
+  const checkOnboardingStatus = async () => {
+    try {
+      const completed = await invoke<boolean>('is_onboarding_completed');
+      setIsOnboardingCompleted(completed);
+    } catch (err) {
+      console.error('Failed to check onboarding status:', err);
+    }
+  };
+
+  const handleCompleteOnboarding = async () => {
+    try {
+      await invoke('complete_onboarding');
+      setIsOnboardingCompleted(true);
+    } catch (err) {
+      console.error('Failed to complete onboarding:', err);
+    }
+  };
+
   useEffect(() => {
     checkPinStatus();
+    checkOnboardingStatus();
   }, []);
 
   const handleBackup = async () => {
@@ -61,17 +81,18 @@ export function useSettings() {
     }
   };
 
-  const handleSetPin = async (newPin: string, currentPin?: string) => {
+  const handleSetPin = async (newPin: string, currentPin?: string): Promise<string | null> => {
     clearMessages();
     setPinLoading(true);
     try {
-      await invoke('set_admin_pin', { currentPin: currentPin || null, newPin });
+      const recoveryKey = await invoke<string | null>('set_admin_pin', { currentPin: currentPin || null, newPin });
       setSuccessMessage(
         isPinSet 
           ? 'Yönetici PIN kodu başarıyla güncellendi.' 
           : 'Yönetici PIN kodu başarıyla oluşturuldu.'
       );
       await checkPinStatus();
+      return recoveryKey;
     } catch (err: any) {
       setErrorMessage(err?.toString() || 'PIN kodu kaydedilirken bir hata oluştu.');
       throw err;
@@ -100,6 +121,7 @@ export function useSettings() {
     restoreLoading,
     pinLoading,
     isPinSet,
+    isOnboardingCompleted,
     successMessage,
     errorMessage,
     clearMessages,
@@ -107,5 +129,7 @@ export function useSettings() {
     handleRestore,
     handleSetPin,
     handleRemovePin,
+    handleCompleteOnboarding,
+    checkPinStatus,
   };
 }
