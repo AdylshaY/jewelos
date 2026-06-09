@@ -53,6 +53,15 @@ The following modules are not active:
 
 Do not create code for them.
 
+## Future Goals / Backlog
+
+- **Offline Licensing & Copy Protection System (Modül Bazlı Çevrimdışı Lisanslama):**
+  - Implement hardware node-locking in Rust backend (Anakart UUID + CPU ID).
+  - Use asymmetric cryptography (Ed25519) to verify license signatures locally.
+  - Store license key in `system_settings` table.
+  - Support modular access flags (e.g. `kasa_defteri`, `stok_yonetimi`, `crm_musteri`) to dynamically enable/disable feature routes and Sidebar menus.
+  - Add Activation/Licensing screen to settings.
+
 ## Database Snapshot
 
 Active schema tables (managed via SQLite migrations):
